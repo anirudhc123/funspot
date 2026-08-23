@@ -1,0 +1,12 @@
+{
+  "name": "@funspot/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Start Expo dev in apps/mobile\"",
+    "build": "echo \"Build mobile\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf .expo dist"
+  }
+}

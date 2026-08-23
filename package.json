@@ -1,0 +1,30 @@
+{
+  "name": "funspot",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "bootstrap": "pnpm install",
+    "build": "pnpm -w -r run build",
+    "dev": "pnpm -w -r run dev",
+    "typecheck": "pnpm -w -r run typecheck",
+    "lint": "pnpm -w -r run lint",
+    "docker:up": "docker-compose up -d --build",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "clean": "pnpm -w -r run clean"
+  },
+  "devDependencies": {
+    "typescript": "5.4.2",
+    "eslint": "8.50.0",
+    "@typescript-eslint/parser": "6.6.0",
+    "@typescript-eslint/eslint-plugin": "6.6.0",
+    "prettier": "2.8.8",
+    "ts-node": "10.9.1",
+    "ts-node-dev": "2.0.0"
+  },
+  "packageManager": "pnpm@11.23.0+sha1.0a15e2d3f345118a5fe6850597fba5c09c036f3b"
+}

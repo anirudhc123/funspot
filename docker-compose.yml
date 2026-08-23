@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: funspot
+      POSTGRES_PASSWORD: funspot_pass
+      POSTGRES_DB: funspot_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - funspot_net
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - funspot_net
+
+volumes:
+  postgres_data:
+
+networks:
+  funspot_net:
+    driver: bridge

@@ -1,0 +1,12 @@
+{
+  "name": "@funspot/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Start Next.js dev in apps/web\"",
+    "build": "echo \"Build web\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf .next dist"
+  }
+}

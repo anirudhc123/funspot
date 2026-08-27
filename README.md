@@ -49,7 +49,7 @@ The product architecture is designed for social features such as profiles, posts
 
 ## Current Status
 
-This repository is currently in Phase 4: production-quality authentication infrastructure.
+This repository is currently in Phase 5: users and profiles.
 
 Implemented so far:
 - Express application startup
@@ -69,11 +69,12 @@ Implemented so far:
 - PostgreSQL database module with Prisma client lifecycle management
 - Initial Prisma migration under `apps/api/prisma/migrations/`
 - Database health endpoint: `GET /api/v1/health/db`
-- Authentication module wired under `/api/v1/auth` with register, login, logout, refresh, forgot-password, and reset-password route scaffolds
+- Authentication module wired under `/api/v1/auth` with register, login, logout, refresh, forgot-password, reset-password, password reset architecture, and secure cookie-compatible token responses
 - Password hashing via bcryptjs and JWT access/refresh token issuance with a secure-cookie and bearer-token friendly strategy
 - Protected route middleware prototype via `requireAuth`
+- Users module route, controller, service, repository, and validator scaffolding for `GET /api/v1/users/me`, `PATCH /api/v1/users/me`, `GET /api/v1/users/:username`, follow, unfollow, accept/reject/cancel follow requests, followers, following, block/unblock, mute/unmute
 
-The repository now includes a Phase 4 auth route skeleton and service/repository pattern for password hashing, refresh-token rotation, reset architecture, and a secure cookie-compatible response envelope. Users and profile business workflows remain planned for Phase 5.
+The repository now includes the Phase 4 auth base and the Phase 5 user profile module foundation. The data layer remains in-memory for the implementation phase, with the ability to swap into Prisma once the repository contracts are fleshed out further.
 
 ## Repository Structure
 

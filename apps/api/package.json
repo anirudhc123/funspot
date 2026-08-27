@@ -13,7 +13,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name init",
     "db:deploy": "prisma migrate deploy",
-    "test": "npm run build && node --test test/auth.spec.js"
+    "test": "npm run build && node --test test/auth.spec.js test/users.spec.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

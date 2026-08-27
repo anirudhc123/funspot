@@ -49,7 +49,7 @@ The product architecture is designed for social features such as profiles, posts
 
 ## Current Status
 
-This repository is currently in Phase 2: Express backend foundation.
+This repository is currently in Phase 3: PostgreSQL and Prisma integration.
 
 Implemented so far:
 - Express application startup
@@ -65,8 +65,12 @@ Implemented so far:
 - Rate limiting
 - Zod validation infrastructure
 - Standardized API response format
+- Prisma schema covering users, profiles, sessions, posts, social interactions, notifications, conversations, messages, reports, and audit logs
+- PostgreSQL database module with Prisma client lifecycle management
+- Initial Prisma migration under `apps/api/prisma/migrations/`
+- Database health endpoint: `GET /api/v1/health/db`
 
-Authentication and business-domain modules are intentionally not implemented yet.
+Authentication and business-domain workflows are intentionally not implemented yet. The database models are ready for those later phases.
 
 ## Repository Structure
 
@@ -89,6 +93,9 @@ funspot/
 │   │   │   ├── app.ts
 │   │   │   └── index.ts
 │   │   ├── .env.example
+│   │   ├── prisma/
+│   │   │   ├── migrations/
+│   │   │   └── schema.prisma
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   ├── web/
@@ -158,6 +165,20 @@ Expected response:
   }
 }
 ```
+
+### Database setup and health check
+
+Start the local PostgreSQL service with Docker Compose, then configure `apps/api/.env` from `apps/api/.env.example`.
+
+```bash
+docker compose up -d postgres
+cd apps/api
+npm run db:generate
+npm run db:deploy
+curl http://localhost:4000/api/v1/health/db
+```
+
+The database health endpoint executes a lightweight PostgreSQL query and returns the standard success response when the connection is available.
 
 ## API Design
 

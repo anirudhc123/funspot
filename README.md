@@ -49,7 +49,7 @@ The product architecture is designed for social features such as profiles, posts
 
 ## Current Status
 
-This repository is currently in Phase 6: posts and media.
+This repository is currently in Phase 7: social interactions and engagement.
 
 Implemented so far:
 - Express application startup
@@ -76,8 +76,9 @@ Implemented so far:
 - Posts module for create, read, update, and delete with privacy levels (`PUBLIC`, `FOLLOWERS`, `PRIVATE`), hashtags, mentions, media metadata, validation, and ownership enforcement
 - Media upload architecture for signed upload URL generation, file type/size validation, and object storage metadata preparation
 - BullMQ-ready worker definitions for image processing, video processing, and thumbnail generation
+- Social interaction module for likes, saves, comments, replies, deletion authorization, share creation, and paginated comment retrieval
 
-The repository now includes the Phase 4 auth base, the Phase 5 user profile foundation, and the Phase 6 post/media workflow using in-memory repositories for the current implementation stage while preserving a clear path to Prisma-backed persistence later.
+The repository now includes the Phase 4 auth base, the Phase 5 user profile foundation, the Phase 6 post/media workflow, and the Phase 7 social interaction layer using in-memory repositories for the current implementation stage while preserving a clear path to Prisma-backed persistence later.
 
 ## Repository Structure
 

@@ -5,13 +5,15 @@ import { validate } from '../../validators/zod';
 import { successResponse } from '../../utils/apiResponse';
 import { forgotPasswordSchema, loginSchema, refreshSchema, registerSchema, resetPasswordSchema } from './auth.validator';
 
+const secureCookies = process.env.NODE_ENV === 'production';
+
 export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
     try {
       const parsed = validate(registerSchema, req.body, 'register');
       const result = await AuthService.register(parsed);
-      res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
-      res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
+      res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+      res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.status(201).json(successResponse({ user: result.user, tokens: { accessToken: result.accessToken, refreshToken: result.refreshToken } }));
     } catch (error) {
       next(error);
@@ -22,8 +24,8 @@ export class AuthController {
     try {
       const parsed = validate(loginSchema, req.body, 'login');
       const result = await AuthService.login(parsed);
-      res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
-      res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
+      res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+      res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.status(200).json(successResponse({ user: result.user, tokens: { accessToken: result.accessToken, refreshToken: result.refreshToken } }));
     } catch (error) {
       next(error);
@@ -47,8 +49,8 @@ export class AuthController {
       const raw = validate(refreshSchema, req.body ?? req.cookies ?? {}, 'refresh');
       const refreshToken = raw.refreshToken ?? req.cookies?.refreshToken;
       const result = AuthService.refresh(refreshToken ?? '');
-      res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
-      res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
+      res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+      res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.status(200).json(successResponse({ user: result.user, tokens: { accessToken: result.accessToken, refreshToken: result.refreshToken } }));
     } catch (error) {
       next(error);

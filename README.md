@@ -49,7 +49,7 @@ The product architecture is designed for social features such as profiles, posts
 
 ## Current Status
 
-This repository is currently in Phase 5: users and profiles.
+This repository is currently in Phase 6: posts and media.
 
 Implemented so far:
 - Express application startup
@@ -73,8 +73,11 @@ Implemented so far:
 - Password hashing via bcryptjs and JWT access/refresh token issuance with a secure-cookie and bearer-token friendly strategy
 - Protected route middleware prototype via `requireAuth`
 - Users module route, controller, service, repository, and validator scaffolding for `GET /api/v1/users/me`, `PATCH /api/v1/users/me`, `GET /api/v1/users/:username`, follow, unfollow, accept/reject/cancel follow requests, followers, following, block/unblock, mute/unmute
+- Posts module for create, read, update, and delete with privacy levels (`PUBLIC`, `FOLLOWERS`, `PRIVATE`), hashtags, mentions, media metadata, validation, and ownership enforcement
+- Media upload architecture for signed upload URL generation, file type/size validation, and object storage metadata preparation
+- BullMQ-ready worker definitions for image processing, video processing, and thumbnail generation
 
-The repository now includes the Phase 4 auth base and the Phase 5 user profile module foundation. The data layer remains in-memory for the implementation phase, with the ability to swap into Prisma once the repository contracts are fleshed out further.
+The repository now includes the Phase 4 auth base, the Phase 5 user profile foundation, and the Phase 6 post/media workflow using in-memory repositories for the current implementation stage while preserving a clear path to Prisma-backed persistence later.
 
 ## Repository Structure
 

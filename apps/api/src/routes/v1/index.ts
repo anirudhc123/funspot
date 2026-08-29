@@ -7,6 +7,7 @@ import postsRoutes from '../../modules/posts/posts.routes';
 import mediaRoutes from '../../modules/media/media.routes';
 import socialRoutes from '../../modules/social/social.routes';
 import feedRoutes from '../../modules/feed/feed.routes';
+import notificationsRoutes from '../../modules/notifications/notifications.routes';
 
 const v1Router = Router();
 
@@ -17,5 +18,6 @@ v1Router.use('/posts', postsRoutes);
 v1Router.use('/posts', socialRoutes);
 v1Router.use('/media', mediaRoutes);
 v1Router.use('/feed', feedRoutes);
+v1Router.use('/notifications', notificationsRoutes);
 
 export default v1Router;

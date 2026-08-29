@@ -36,9 +36,11 @@ export const saves: SocialSaveRecord[] = [];
 export const comments: CommentRecord[] = [];
 export const shares: ShareRecord[] = [];
 
+const createUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+
 export class SocialRepository {
   static createLike(userId: string, postId: string): SocialLikeRecord {
-    const record = { id: `like-${Date.now()}`, userId, postId, createdAt: new Date() };
+    const record = { id: createUniqueId('like'), userId, postId, createdAt: new Date() };
     likes.push(record);
     return record;
   }
@@ -53,7 +55,7 @@ export class SocialRepository {
   }
 
   static createSave(userId: string, postId: string): SocialSaveRecord {
-    const record = { id: `save-${Date.now()}`, userId, postId, createdAt: new Date() };
+    const record = { id: createUniqueId('save'), userId, postId, createdAt: new Date() };
     saves.push(record);
     return record;
   }
@@ -99,7 +101,7 @@ export class SocialRepository {
   }
 
   static createShare(userId: string, postId: string, text?: string): ShareRecord {
-    const record = { id: `share-${Date.now()}`, userId, postId, text, createdAt: new Date() };
+    const record = { id: createUniqueId('share'), userId, postId, text, createdAt: new Date() };
     shares.push(record);
     return record;
   }

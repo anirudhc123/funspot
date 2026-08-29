@@ -48,6 +48,8 @@ export type MuteRecord = {
   createdAt: Date;
 };
 
+const createUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+
 export const users: UserRecord[] = [
   {
     id: 'u-1',
@@ -137,7 +139,7 @@ export class UsersRepository {
 
   static createFollow(followerId: string, followeeId: string, status: FollowStatus): FollowRecord {
     const follow = {
-      id: `follow-${Date.now()}`,
+      id: createUniqueId('follow'),
       followerId,
       followeeId,
       status,
@@ -167,7 +169,7 @@ export class UsersRepository {
 
   static createFollowRequest(requesterId: string, targetId: string): FollowRequestRecord {
     const request = {
-      id: `follow-request-${Date.now()}`,
+      id: createUniqueId('follow-request'),
       requesterId,
       targetId,
       message: undefined,
@@ -196,7 +198,7 @@ export class UsersRepository {
 
   static createBlock(sourceUserId: string, blockedUserId: string): BlockRecord {
     const block = {
-      id: `block-${Date.now()}`,
+      id: createUniqueId('block'),
       sourceUserId,
       blockedUserId,
       createdAt: new Date(),
@@ -215,7 +217,7 @@ export class UsersRepository {
 
   static createMute(sourceUserId: string, mutedUserId: string): MuteRecord {
     const mute = {
-      id: `mute-${Date.now()}`,
+      id: createUniqueId('mute'),
       sourceUserId,
       mutedUserId,
       createdAt: new Date(),

@@ -7,6 +7,7 @@ const IMAGE_LIMIT = 10 * 1024 * 1024;
 const VIDEO_LIMIT = 100 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+const createUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 
 export class PostsService {
   static parseHashtags(text?: string): string[] {
@@ -54,7 +55,7 @@ export class PostsService {
 
     PostsService.validateMedia(normalizedMedia);
 
-    const postId = `post-${Date.now()}`;
+    const postId = createUniqueId('post');
     const post = PostsRepository.create({
       id: postId,
       authorId,
@@ -64,11 +65,11 @@ export class PostsService {
       hashtags: PostsService.parseHashtags(text),
       mentions: PostsService.parseMentions(text),
       media: normalizedMedia.map((item, index) => ({
-        id: `media-${Date.now()}-${index}`,
+        id: createUniqueId(`media-${index}`),
         postId,
         kind: item.kind,
         url: item.url ?? `https://cdn.example.com/${item.fileName}`,
-        storageKey: item.storageKey ?? `posts/${authorId}/${Date.now()}-${index}-${item.fileName}`,
+        storageKey: item.storageKey ?? `posts/${authorId}/${createUniqueId('media')}-${item.fileName}`,
         mimeType: item.mimeType,
         sizeBytes: item.sizeBytes,
         fileName: item.fileName,
@@ -131,11 +132,11 @@ export class PostsService {
       hashtags: PostsService.parseHashtags(nextText),
       mentions: PostsService.parseMentions(nextText),
       media: nextMedia.map((item, index) => ({
-        id: item.fileName ? `media-${Date.now()}-${index}` : post.media[index]?.id ?? `media-${Date.now()}-${index}`,
+        id: item.fileName ? createUniqueId(`media-${index}`) : post.media[index]?.id ?? createUniqueId(`media-${index}`),
         postId: post.id,
         kind: item.kind,
         url: item.url ?? post.media[index]?.url ?? `https://cdn.example.com/${item.fileName}`,
-        storageKey: item.storageKey ?? post.media[index]?.storageKey ?? `posts/${authorId}/${Date.now()}-${index}-${item.fileName}`,
+        storageKey: item.storageKey ?? post.media[index]?.storageKey ?? `posts/${authorId}/${createUniqueId('media')}-${item.fileName}`,
         mimeType: item.mimeType,
         sizeBytes: item.sizeBytes,
         fileName: item.fileName,

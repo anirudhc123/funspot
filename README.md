@@ -49,7 +49,7 @@ The product architecture is designed for social features such as profiles, posts
 
 ## Current Status
 
-This repository is currently in Phase 9: notification delivery and read-state management.
+This repository is currently in Phase 10: real-time messaging and conversation management.
 
 Implemented so far:
 - Express application startup
@@ -78,8 +78,9 @@ Implemented so far:
 - BullMQ-ready worker definitions for image processing, video processing, and thumbnail generation
 - Social interaction module for likes, saves, comments, replies, deletion authorization, share creation, and paginated comment retrieval
 - Notification module for in-app notification creation, recipient filtering, read/unread tracking, bulk mark-as-read, and BullMQ-ready delivery hooks for Expo push notifications
+- Chat module for conversation creation, message persistence, authorization checks, message history, read receipts, typing indicators, and Socket.IO presence updates
 
-The repository now includes the Phase 4 auth base, the Phase 5 user profile foundation, the Phase 6 post/media workflow, the Phase 7 social interaction layer, and the Phase 9 notification layer using in-memory repositories for the current implementation stage while preserving a clear path to Prisma-backed persistence later.
+The repository now includes the Phase 4 auth base, the Phase 5 user profile foundation, the Phase 6 post/media workflow, the Phase 7 social interaction layer, the Phase 9 notification layer, and the Phase 10 messaging layer using in-memory repositories for the current implementation stage while preserving a clear path to Prisma-backed persistence later.
 
 ## Repository Structure
 

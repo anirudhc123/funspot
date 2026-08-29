@@ -1,14 +1,29 @@
+import { createServer } from 'node:http';
+
+import { Server } from 'socket.io';
+
 import { createApp } from './app';
 import { env } from './config/env';
-import { logger } from './utils/logger';
 import { connectDatabase, disconnectDatabase } from './database/database';
+import { logger } from './utils/logger';
+import { registerChatSocket } from './socket/chatSocket';
 
 const port = env.PORT;
 
 const start = async (): Promise<void> => {
   await connectDatabase();
   const app = createApp();
-  const server = app.listen(port, () => {
+  const server = createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: true,
+      credentials: true,
+    },
+  });
+
+  registerChatSocket(io);
+
+  server.listen(port, () => {
     logger.info({ port, nodeEnv: env.NODE_ENV }, 'Funspot API server started');
   });
 

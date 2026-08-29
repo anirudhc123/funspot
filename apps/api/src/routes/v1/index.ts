@@ -8,6 +8,7 @@ import mediaRoutes from '../../modules/media/media.routes';
 import socialRoutes from '../../modules/social/social.routes';
 import feedRoutes from '../../modules/feed/feed.routes';
 import notificationsRoutes from '../../modules/notifications/notifications.routes';
+import chatRoutes from '../../modules/chat/chat.routes';
 
 const v1Router = Router();
 
@@ -19,5 +20,6 @@ v1Router.use('/posts', socialRoutes);
 v1Router.use('/media', mediaRoutes);
 v1Router.use('/feed', feedRoutes);
 v1Router.use('/notifications', notificationsRoutes);
+v1Router.use('/conversations', chatRoutes);
 
 export default v1Router;

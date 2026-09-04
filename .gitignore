@@ -3,6 +3,7 @@ dist/
 .env
 .env.*
 .env.example
+!.env.production.example
 .env.example
 !**/.env.*.example
 .DS_Store
@@ -16,7 +17,10 @@ coverage/
 docker-compose.override.yml
 **/node_modules
 **/dist
+**/.next
 **/.turbo
 **/.cache
 **/.env
 **/.env.*
+!.env.production.example
+!**/.env.*.example

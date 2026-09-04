@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+**/node_modules
+dist
+**/dist
+.next
+**/.next
+.expo
+coverage
+.postgres-data
+.env
+.env.*
+!.env.example
+*.log

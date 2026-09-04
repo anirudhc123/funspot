@@ -5,9 +5,9 @@ services:
     image: postgres:15
     restart: unless-stopped
     environment:
-      POSTGRES_USER: funspot
-      POSTGRES_PASSWORD: funspot_pass
-      POSTGRES_DB: funspot_dev
+      POSTGRES_USER: ${POSTGRES_USER:-funspot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-funspot_dev}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

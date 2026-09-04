@@ -8,6 +8,7 @@ import { requestLogger } from './middleware/requestLogger';
 import { securityMiddleware } from './middleware/security';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import { errorHandler } from './middleware/errorHandler';
+import { csrfProtection } from './middleware/csrf';
 
 export const createApp = (): Express => {
   const app = express();
@@ -23,6 +24,7 @@ export const createApp = (): Express => {
 
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(csrfProtection);
 
   app.use('/api', apiRouter);
   app.use(notFoundHandler);

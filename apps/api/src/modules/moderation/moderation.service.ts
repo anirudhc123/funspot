@@ -4,6 +4,17 @@ import { UsersRepository, type UserRole, type UserStatus } from '../users/users.
 import { ModerationRepository, type ReportStatus, type ReportTargetType } from './moderation.repository';
 
 export class ModerationService {
+  private static roleLevel(role: UserRole): number {
+    return { USER: 0, MODERATOR: 1, ADMIN: 2, SUPER_ADMIN: 3 }[role];
+  }
+
+  private static assertCanManage(actorId: string, target: { id: string; role: UserRole }) {
+    const actor = UsersRepository.findById(actorId);
+    if (!actor || actor.id === target.id || ModerationService.roleLevel(actor.role) <= ModerationService.roleLevel(target.role)) {
+      throw new AppError(403, 'INSUFFICIENT_PRIVILEGES', 'You cannot manage this account.');
+    }
+  }
+
   static createReport(reporterId: string, input: { targetType: ReportTargetType; targetId: string; reason?: string }) {
     if (input.targetType === 'USER' && !UsersRepository.findById(input.targetId)) {
       throw new AppError(404, 'REPORT_TARGET_NOT_FOUND', 'The reported user was not found.');
@@ -36,7 +47,11 @@ export class ModerationService {
   static updateRole(actorId: string, userId: string, role: UserRole) {
     const user = UsersRepository.findById(userId);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User was not found.');
-    if (user.id === actorId && role !== 'SUPER_ADMIN') throw new AppError(400, 'SELF_DEMOTION_FORBIDDEN', 'You cannot remove your own super-admin role.');
+    ModerationService.assertCanManage(actorId, user);
+    const actor = UsersRepository.findById(actorId);
+    if (!actor || ModerationService.roleLevel(actor.role) < ModerationService.roleLevel(role)) {
+      throw new AppError(403, 'INSUFFICIENT_PRIVILEGES', 'You cannot grant this role.');
+    }
     user.role = role;
     UsersRepository.update(user, {});
     ModerationRepository.createAudit({ actorId, action: 'UPDATE_USER_ROLE', targetType: 'USER', targetId: userId, metadata: { role } });
@@ -46,7 +61,7 @@ export class ModerationService {
   static setUserStatus(actorId: string, userId: string, status: UserStatus, reason?: string, durationHours?: number) {
     const user = UsersRepository.findById(userId);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User was not found.');
-    if (user.role === 'SUPER_ADMIN') throw new AppError(403, 'SUPER_ADMIN_PROTECTED', 'Super-admin accounts require an out-of-band action.');
+    ModerationService.assertCanManage(actorId, user);
     user.status = status;
     user.suspendedUntil = status === 'SUSPENDED' && durationHours ? new Date(Date.now() + durationHours * 60 * 60 * 1000) : undefined;
     UsersRepository.update(user, {});

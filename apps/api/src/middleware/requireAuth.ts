@@ -3,8 +3,7 @@ import jwt from 'jsonwebtoken';
 
 import { AppError } from '../errors/AppError';
 import { UsersRepository } from '../modules/users/users.repository';
-
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? 'local-dev-access-secret';
+import { env } from '../config/env';
 
 export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   const raw = req.headers.authorization ?? '';
@@ -14,7 +13,14 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
   }
 
   try {
-    const payload = jwt.verify(token, ACCESS_SECRET) as { sub: string; email: string; username: string };
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET, {
+      issuer: 'funspot',
+      audience: 'funspot-api',
+      algorithms: ['HS256'],
+    });
+    if (typeof payload !== 'object' || typeof payload.sub !== 'string') {
+      throw new Error('Invalid token subject.');
+    }
     const user = UsersRepository.findById(payload.sub);
     if (!user) return next(new AppError(401, 'UNAUTHORIZED', 'User account was not found.'));
     if (user.status === 'BANNED') return next(new AppError(403, 'ACCOUNT_BANNED', 'This account has been banned.'));

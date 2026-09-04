@@ -283,9 +283,9 @@ The project is planned in phases:
 12. Phase 11 — Mobile app (in progress: Expo foundation complete)
 13. Phase 12 — Web app (complete)
 14. Phase 13 — Admin and moderation (complete)
-15. Phase 14 — Testing
-16. Phase 15 — Security and performance
-17. Phase 16 — Production Docker setup
+15. Phase 14 — Testing (complete)
+16. Phase 15 — Security and performance (complete)
+17. Phase 16 — Production Docker setup (complete)
 18. Phase 17 — CI/CD and deployment
 
 ## Contributing

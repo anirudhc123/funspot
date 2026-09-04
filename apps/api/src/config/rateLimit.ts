@@ -17,3 +17,17 @@ export const apiRateLimit = rateLimit({
   skipSuccessfulRequests: false,
   skipFailedRequests: false,
 });
+
+export const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'AUTH_RATE_LIMITED',
+      message: 'Too many authentication attempts. Please try again later.',
+    },
+  },
+});

@@ -1,5 +1,5 @@
 import { AppError } from '../../errors/AppError';
-import { ChatRepository, ConversationRecord, MessageRecord } from './chat.repository';
+import { ChatRepository, ConversationRecord, messages, type MessageRecord } from './chat.repository';
 
 export class ChatService {
   static createConversation(actorId: string, participantIds: string[], name?: string) {
@@ -95,5 +95,3 @@ export class ChatService {
     return ChatRepository.serializeMessage(updated);
   }
 }
-
-const { messages } = require('./chat.repository') as { messages: MessageRecord[] };

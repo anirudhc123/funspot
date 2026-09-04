@@ -4,8 +4,9 @@ import { successResponse } from '../../utils/apiResponse';
 import { validate } from '../../validators/zod';
 import { ModerationService } from './moderation.service';
 import { reportSchema, reportUpdateSchema, roleUpdateSchema, userActionSchema } from './moderation.validator';
+import { getRequestUserId } from '../../utils/requestUser';
 
-const actorId = (req: Request): string => req.user?.id ?? '';
+const actorId = (req: Request): string => getRequestUserId(req);
 
 export class ModerationController {
   static async createReport(req: Request, res: Response, next: NextFunction) {

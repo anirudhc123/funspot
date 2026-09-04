@@ -7,6 +7,7 @@ import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './database/database';
 import { logger } from './utils/logger';
 import { registerChatSocket } from './socket/chatSocket';
+import { corsOptions } from './config/cors';
 
 const port = env.PORT;
 
@@ -15,10 +16,7 @@ const start = async (): Promise<void> => {
   const app = createApp();
   const server = createServer(app);
   const io = new Server(server, {
-    cors: {
-      origin: true,
-      credentials: true,
-    },
+    cors: corsOptions,
   });
 
   registerChatSocket(io);

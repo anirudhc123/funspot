@@ -244,6 +244,16 @@ npm run typecheck -w @funspot/mobile
 
 The Expo CLI currently requires Node.js 20.19.4 or newer for local bundling.
 
+## Web App
+
+The Next.js App Router application lives in [`apps/web`](./apps/web). It provides responsive desktop and mobile layouts, API-backed authentication forms, feed pagination, profiles, posts, notifications, messages, explore, and settings routes. Web authentication uses the API's HTTP-only cookie flow, while TanStack Query manages server state and Zustand manages UI navigation state.
+
+Run the web app with:
+
+```bash
+npm run dev -w @funspot/web
+```
+
 ## Roadmap
 
 The project is planned in phases:
@@ -260,7 +270,7 @@ The project is planned in phases:
 10. Phase 9 — Notifications
 11. Phase 10 — Realtime chat
 12. Phase 11 — Mobile app (in progress: Expo foundation complete)
-13. Phase 12 — Web app
+13. Phase 12 — Web app (complete)
 14. Phase 13 — Admin system
 15. Phase 14 — Testing
 16. Phase 15 — Security and performance

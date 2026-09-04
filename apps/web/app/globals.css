@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #f8fafc; color: #0f172a; }
+a { color: inherit; text-decoration: none; }
+button, input, textarea { font: inherit; }
+@layer components {
+  .field { @apply rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100; }
+  .button { @apply rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60; }
+}

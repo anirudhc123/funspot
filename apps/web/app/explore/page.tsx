@@ -1,0 +1,3 @@
+import Link from 'next/link';
+import { Shell } from '../../components/Shell';
+export default function ExplorePage() { return <Shell><h1 className="text-3xl font-black">Explore</h1><p className="mt-2 text-slate-500">Discover people, posts, and hashtags.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><Link className="rounded-2xl border bg-white p-6 font-bold hover:border-blue-300" href="/profile/demo">Trending creators →</Link><div className="rounded-2xl border bg-white p-6"><p className="font-bold">#funspot</p><p className="mt-2 text-sm text-slate-500">The community is sharing new moments.</p></div></div></Shell>; }

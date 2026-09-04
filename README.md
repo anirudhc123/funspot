@@ -226,6 +226,24 @@ The foundation already includes:
 - Structured logging
 - Centralized error handling
 
+## Mobile App
+
+The Expo Router application lives in [`apps/mobile`](./apps/mobile). It uses:
+
+- TypeScript, TanStack Query, Zustand, React Hook Form, and Zod
+- SecureStore-backed access-token persistence (never localStorage)
+- Live API clients for authentication, feed, posts, profiles, notifications, and chat
+- Cursor-aware feed loading, reusable loading/empty/error states, and optimistic-ready query invalidation
+- Socket.IO client support for realtime messaging transport
+
+Run the mobile typecheck with:
+
+```bash
+npm run typecheck -w @funspot/mobile
+```
+
+The Expo CLI currently requires Node.js 20.19.4 or newer for local bundling.
+
 ## Roadmap
 
 The project is planned in phases:
@@ -241,7 +259,7 @@ The project is planned in phases:
 9. Phase 8 — Feed and search
 10. Phase 9 — Notifications
 11. Phase 10 — Realtime chat
-12. Phase 11 — Mobile app
+12. Phase 11 — Mobile app (in progress: Expo foundation complete)
 13. Phase 12 — Web app
 14. Phase 13 — Admin system
 15. Phase 14 — Testing

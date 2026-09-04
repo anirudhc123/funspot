@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Funspot",
+    "slug": "funspot-mobile",
+    "scheme": "funspot",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "plugins": ["expo-router"],
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "extra": {
+      "apiUrl": "http://localhost:4000/api/v1"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

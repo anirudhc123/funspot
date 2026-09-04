@@ -10,6 +10,7 @@ dist/
 coverage/
 .nyc_output/
 .postgres-data/
+.postgres-pw
 .pnpm-debug.log
 .pnpmfile.cjs
 docker-compose.override.yml

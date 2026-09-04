@@ -6,6 +6,7 @@ declare global {
         id: string;
         email: string;
         username: string;
+        role: import('../modules/users/users.repository').UserRole;
       };
     }
   }

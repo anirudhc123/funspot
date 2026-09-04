@@ -254,6 +254,17 @@ Run the web app with:
 npm run dev -w @funspot/web
 ```
 
+## Moderation and Administration
+
+Phase 13 adds backend-enforced RBAC with `USER`, `MODERATOR`, `ADMIN`, and `SUPER_ADMIN` roles. Administrative routes are available under `/api/v1/admin` (and the equivalent `/api/v1/moderation` namespace):
+
+- Reports: create, list, review, and resolve
+- User management: list users, suspend, ban, and update roles
+- Content moderation: delete reported posts
+- Dashboard analytics and audit-log access
+
+Roles are resolved from the server-side user record on every authenticated request. Sensitive administrative actions create audit records; frontend role state is never trusted for authorization.
+
 ## Roadmap
 
 The project is planned in phases:
@@ -271,7 +282,7 @@ The project is planned in phases:
 11. Phase 10 — Realtime chat
 12. Phase 11 — Mobile app (in progress: Expo foundation complete)
 13. Phase 12 — Web app (complete)
-14. Phase 13 — Admin system
+14. Phase 13 — Admin and moderation (complete)
 15. Phase 14 — Testing
 16. Phase 15 — Security and performance
 17. Phase 16 — Production Docker setup

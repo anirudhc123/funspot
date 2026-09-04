@@ -58,6 +58,8 @@ export class AuthRepository {
       website: undefined,
       location: undefined,
       privacy: input.privacy ?? 'public',
+      role: 'USER',
+      status: 'ACTIVE',
       passwordHash: input.passwordHash,
       createdAt: new Date(),
       updatedAt: new Date(),

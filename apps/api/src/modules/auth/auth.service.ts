@@ -157,6 +157,8 @@ export class AuthService {
       website: user.website,
       location: user.location,
       privacy: user.privacy,
+      role: user.role,
+      status: user.status,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

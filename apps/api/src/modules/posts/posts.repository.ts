@@ -67,6 +67,10 @@ export class PostsRepository {
     post.deletedAt = new Date();
   }
 
+  static count(): number {
+    return posts.filter((post) => !post.deletedAt).length;
+  }
+
   static addMedia(post: PostRecord, media: PostMediaRecord): PostMediaRecord {
     post.media.push(media);
     return media;

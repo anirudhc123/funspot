@@ -1,5 +1,7 @@
 export type Privacy = 'public' | 'private' | 'followers';
 export type FollowStatus = 'accepted' | 'pending' | 'rejected';
+export type UserRole = 'USER' | 'MODERATOR' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED';
 
 export type UserRecord = {
   id: string;
@@ -13,6 +15,9 @@ export type UserRecord = {
   location?: string;
   passwordHash?: string;
   privacy: Privacy;
+  role: UserRole;
+  status: UserStatus;
+  suspendedUntil?: Date;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -62,6 +67,8 @@ export const users: UserRecord[] = [
     website: 'https://alice.example',
     location: 'San Francisco',
     privacy: 'public',
+    role: 'USER',
+    status: 'ACTIVE',
     passwordHash: 'hash',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
@@ -77,6 +84,8 @@ export const users: UserRecord[] = [
     website: 'https://bob.example',
     location: 'New York',
     privacy: 'private',
+    role: 'USER',
+    status: 'ACTIVE',
     passwordHash: 'hash',
     createdAt: new Date('2026-01-02T00:00:00Z'),
     updatedAt: new Date('2026-01-02T00:00:00Z'),
@@ -92,6 +101,8 @@ export const users: UserRecord[] = [
     website: 'https://carol.example',
     location: 'Austin',
     privacy: 'followers',
+    role: 'USER',
+    status: 'ACTIVE',
     passwordHash: 'hash',
     createdAt: new Date('2026-01-03T00:00:00Z'),
     updatedAt: new Date('2026-01-03T00:00:00Z'),
@@ -127,6 +138,9 @@ export class UsersRepository {
       website: user.website,
       location: user.location,
       privacy: user.privacy,
+        role: user.role,
+        status: user.status,
+        suspendedUntil: user.suspendedUntil,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

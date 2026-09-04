@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-native",
+    "moduleResolution": "bundler",
     "outDir": "dist",
     "rootDir": "src"
   },

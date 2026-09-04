@@ -49,7 +49,7 @@ The product architecture is designed for social features such as profiles, posts
 
 ## Current Status
 
-This repository is currently in Phase 2: Express backend foundation.
+This repository is currently in Phase 10: real-time messaging and conversation management.
 
 Implemented so far:
 - Express application startup
@@ -65,8 +65,22 @@ Implemented so far:
 - Rate limiting
 - Zod validation infrastructure
 - Standardized API response format
+- Prisma schema covering users, profiles, sessions, posts, social interactions, notifications, conversations, messages, reports, and audit logs
+- PostgreSQL database module with Prisma client lifecycle management
+- Initial Prisma migration under `apps/api/prisma/migrations/`
+- Database health endpoint: `GET /api/v1/health/db`
+- Authentication module wired under `/api/v1/auth` with register, login, logout, refresh, forgot-password, reset-password, password reset architecture, and secure cookie-compatible token responses
+- Password hashing via bcryptjs and JWT access/refresh token issuance with a secure-cookie and bearer-token friendly strategy
+- Protected route middleware prototype via `requireAuth`
+- Users module route, controller, service, repository, and validator scaffolding for `GET /api/v1/users/me`, `PATCH /api/v1/users/me`, `GET /api/v1/users/:username`, follow, unfollow, accept/reject/cancel follow requests, followers, following, block/unblock, mute/unmute
+- Posts module for create, read, update, and delete with privacy levels (`PUBLIC`, `FOLLOWERS`, `PRIVATE`), hashtags, mentions, media metadata, validation, and ownership enforcement
+- Media upload architecture for signed upload URL generation, file type/size validation, and object storage metadata preparation
+- BullMQ-ready worker definitions for image processing, video processing, and thumbnail generation
+- Social interaction module for likes, saves, comments, replies, deletion authorization, share creation, and paginated comment retrieval
+- Notification module for in-app notification creation, recipient filtering, read/unread tracking, bulk mark-as-read, and BullMQ-ready delivery hooks for Expo push notifications
+- Chat module for conversation creation, message persistence, authorization checks, message history, read receipts, typing indicators, and Socket.IO presence updates
 
-Authentication and business-domain modules are intentionally not implemented yet.
+The repository now includes the Phase 4 auth base, the Phase 5 user profile foundation, the Phase 6 post/media workflow, the Phase 7 social interaction layer, the Phase 9 notification layer, and the Phase 10 messaging layer using in-memory repositories for the current implementation stage while preserving a clear path to Prisma-backed persistence later.
 
 ## Repository Structure
 
@@ -89,6 +103,9 @@ funspot/
 │   │   │   ├── app.ts
 │   │   │   └── index.ts
 │   │   ├── .env.example
+│   │   ├── prisma/
+│   │   │   ├── migrations/
+│   │   │   └── schema.prisma
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   ├── web/
@@ -159,6 +176,20 @@ Expected response:
 }
 ```
 
+### Database setup and health check
+
+Start the local PostgreSQL service with Docker Compose, then configure `apps/api/.env` from `apps/api/.env.example`.
+
+```bash
+docker compose up -d postgres
+cd apps/api
+npm run db:generate
+npm run db:deploy
+curl http://localhost:4000/api/v1/health/db
+```
+
+The database health endpoint executes a lightweight PostgreSQL query and returns the standard success response when the connection is available.
+
 ## API Design
 
 The application exposes versioned endpoints under `/api/v1` and uses a consistent response contract:
@@ -195,6 +226,45 @@ The foundation already includes:
 - Structured logging
 - Centralized error handling
 
+## Mobile App
+
+The Expo Router application lives in [`apps/mobile`](./apps/mobile). It uses:
+
+- TypeScript, TanStack Query, Zustand, React Hook Form, and Zod
+- SecureStore-backed access-token persistence (never localStorage)
+- Live API clients for authentication, feed, posts, profiles, notifications, and chat
+- Cursor-aware feed loading, reusable loading/empty/error states, and optimistic-ready query invalidation
+- Socket.IO client support for realtime messaging transport
+
+Run the mobile typecheck with:
+
+```bash
+npm run typecheck -w @funspot/mobile
+```
+
+The Expo CLI currently requires Node.js 20.19.4 or newer for local bundling.
+
+## Web App
+
+The Next.js App Router application lives in [`apps/web`](./apps/web). It provides responsive desktop and mobile layouts, API-backed authentication forms, feed pagination, profiles, posts, notifications, messages, explore, and settings routes. Web authentication uses the API's HTTP-only cookie flow, while TanStack Query manages server state and Zustand manages UI navigation state.
+
+Run the web app with:
+
+```bash
+npm run dev -w @funspot/web
+```
+
+## Moderation and Administration
+
+Phase 13 adds backend-enforced RBAC with `USER`, `MODERATOR`, `ADMIN`, and `SUPER_ADMIN` roles. Administrative routes are available under `/api/v1/admin` (and the equivalent `/api/v1/moderation` namespace):
+
+- Reports: create, list, review, and resolve
+- User management: list users, suspend, ban, and update roles
+- Content moderation: delete reported posts
+- Dashboard analytics and audit-log access
+
+Roles are resolved from the server-side user record on every authenticated request. Sensitive administrative actions create audit records; frontend role state is never trusted for authorization.
+
 ## Roadmap
 
 The project is planned in phases:
@@ -210,9 +280,9 @@ The project is planned in phases:
 9. Phase 8 — Feed and search
 10. Phase 9 — Notifications
 11. Phase 10 — Realtime chat
-12. Phase 11 — Mobile app
-13. Phase 12 — Web app
-14. Phase 13 — Admin system
+12. Phase 11 — Mobile app (in progress: Expo foundation complete)
+13. Phase 12 — Web app (complete)
+14. Phase 13 — Admin and moderation (complete)
 15. Phase 14 — Testing
 16. Phase 15 — Security and performance
 17. Phase 16 — Production Docker setup
@@ -236,10 +306,3 @@ This project is currently under active development and does not yet declare a pr
 ## Notes
 
 The foundation is intentionally minimal and intentionally avoids authentication and feature-specific modules until the underlying infrastructure is stable. This keeps the project easy to extend while staying aligned with the architecture blueprint.
-
----
-
-## Phase status
-
-- Phase 2: completed — Express backend foundation and health API are implemented.
-- Next phase: PostgreSQL + Prisma setup, to be added in the next README update.

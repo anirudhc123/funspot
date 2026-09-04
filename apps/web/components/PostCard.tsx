@@ -1,0 +1,3 @@
+import Link from 'next/link';
+import type { Post } from '../lib/api';
+export function PostCard({ post }: { post: Post }) { return <article className="rounded-2xl border bg-white p-5 shadow-sm"><Link className="font-bold text-blue-700" href={`/profile/${post.authorId}`}>@{post.authorId}</Link><p className="mt-3 whitespace-pre-wrap text-slate-800">{post.text || 'Shared a post.'}</p>{post.hashtags.length > 0 && <p className="mt-3 text-sm text-blue-600">{post.hashtags.map((tag) => `#${tag}`).join(' ')}</p>}<Link className="mt-4 inline-block text-sm font-semibold text-slate-500" href={`/post/${post.id}`}>View post</Link></article>; }

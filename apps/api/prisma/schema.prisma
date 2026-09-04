@@ -1,0 +1,377 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+
+enum Visibility {
+  PUBLIC
+  FOLLOWERS
+  PRIVATE
+}
+
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  RESOLVED
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+// Models
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String?
+  isEmailVerified Boolean @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  role         UserRole  @default(USER)
+  status       UserStatus @default(ACTIVE)
+  suspendedUntil DateTime?
+  role         UserRole  @default(USER)
+  status       UserStatus @default(ACTIVE)
+  suspendedUntil DateTime?
+
+  profile      Profile?
+  sessions     Session[]
+  refreshTokens RefreshToken[]
+  posts        Post[]
+  comments     Comment[]
+  likes        Like[]
+  saves        Save[]
+  followers    Follow[]  @relation("followee")
+  following    Follow[]  @relation("follower")
+  notifications Notification[]
+  messagesSent Message[] @relation("sender")
+  conversationMembers ConversationMember[]
+  auditLogs    AuditLog[] @relation("actor")
+  followRequestsSent FollowRequest[] @relation("requester")
+  followRequestsReceived FollowRequest[] @relation("target")
+  blocksCreated Block[] @relation("sourceUser")
+  blocksReceived Block[] @relation("blockedUser")
+  mutesCreated Mute[] @relation("sourceUser")
+  mutesReceived Mute[] @relation("mutedUser")
+  mentions Mention[]
+  messageReads MessageRead[]
+  reports Report[]
+}
+
+model Profile {
+  id         String  @id @default(uuid())
+  user       User    @relation(fields: [userId], references: [id])
+  userId     String  @unique
+  username   String  @unique
+  displayName String?
+  bio        String?
+  avatarUrl  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  tokenHash  String
+  revoked    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  replacedBy String?
+
+  @@unique([tokenHash])
+  @@index([userId])
+}
+
+model Post {
+  id         String   @id @default(uuid())
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   String
+  content    String
+  visibility Visibility @default(PUBLIC)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  media      PostMedia[]
+  comments   Comment[]
+  hashtags   PostHashtag[]
+  mentions   Mention[]
+  saves      Save[]
+  likes      Like[]    @relation("like_post")
+
+  @@index([authorId, createdAt])
+  @@index([createdAt])
+}
+
+model PostMedia {
+  id        String   @id @default(uuid())
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  url       String
+  mime      String
+  width     Int?
+  height    Int?
+  size      Int?
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  parent    Comment? @relation("comment_parent", fields: [parentId], references: [id])
+  parentId  String?
+  content   String
+  createdAt DateTime @default(now())
+  likes     Like[]   @relation("like_comment")
+  replies   Comment[] @relation("comment_parent")
+
+  @@index([postId, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model Like {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  // polymorphic target: either a post or a comment (store as fields)
+  post       Post?    @relation("like_post", fields: [postId], references: [id])
+  postId     String?
+  comment    Comment? @relation("like_comment", fields: [commentId], references: [id])
+  commentId  String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, postId], name: "unique_user_post_like")
+  @@unique([userId, commentId], name: "unique_user_comment_like")
+  @@index([postId])
+  @@index([commentId])
+}
+
+model Save {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Follow {
+  id          String     @id @default(uuid())
+  follower    User       @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  followee     User      @relation("followee", fields: [followeeId], references: [id])
+  followeeId  String
+  status      FollowStatus @default(ACCEPTED)
+  createdAt   DateTime   @default(now())
+
+  @@unique([followerId, followeeId])
+  @@index([followeeId, status])
+  @@index([followerId, status])
+}
+
+model FollowRequest {
+  id          String   @id @default(uuid())
+  requester   User     @relation("requester", fields: [requesterId], references: [id])
+  requesterId String
+  target      User     @relation("target", fields: [targetId], references: [id])
+  targetId    String
+  message     String?
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, targetId])
+  @@index([targetId])
+}
+
+model Block {
+  id           String   @id @default(uuid())
+  sourceUser   User     @relation("sourceUser", fields: [sourceUserId], references: [id])
+  sourceUserId String
+  blockedUser  User     @relation("blockedUser", fields: [blockedUserId], references: [id])
+  blockedUserId String
+  createdAt    DateTime @default(now())
+
+  @@unique([sourceUserId, blockedUserId])
+  @@index([blockedUserId])
+}
+
+model Mute {
+  id            String   @id @default(uuid())
+  sourceUser    User     @relation("sourceUser", fields: [sourceUserId], references: [id])
+  sourceUserId  String
+  mutedUser     User     @relation("mutedUser", fields: [mutedUserId], references: [id])
+  mutedUserId   String
+  until          DateTime?
+  createdAt     DateTime @default(now())
+
+  @@unique([sourceUserId, mutedUserId])
+  @@index([mutedUserId])
+}
+
+model Hashtag {
+  id        String   @id @default(uuid())
+  tag       String   @unique
+  createdAt DateTime @default(now())
+  posts     PostHashtag[]
+}
+
+model PostHashtag {
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  hashtag   Hashtag  @relation(fields: [hashtagId], references: [id])
+  hashtagId String
+
+  @@id([postId, hashtagId])
+}
+
+model Mention {
+  id              String   @id @default(uuid())
+  post            Post     @relation(fields: [postId], references: [id])
+  postId          String
+  mentionedUser   User     @relation(fields: [mentionedUserId], references: [id])
+  mentionedUserId String
+  createdAt       DateTime @default(now())
+
+  @@unique([postId, mentionedUserId])
+  @@index([mentionedUserId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  type      String
+  payload   Json
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read, createdAt])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  members   ConversationMember[]
+  messages  Message[]
+}
+
+model ConversationMember {
+  id             String       @id @default(uuid())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  sender         User     @relation("sender", fields: [senderId], references: [id])
+  senderId       String
+  content        String
+  createdAt      DateTime @default(now())
+  reads          MessageRead[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+model MessageRead {
+  id        String   @id @default(uuid())
+  message   Message  @relation(fields: [messageId], references: [id])
+  messageId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  readAt    DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([userId])
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  reporter   User     @relation(fields: [reporterId], references: [id])
+  reporterId String
+  targetType String
+  targetId   String
+  reason     String?
+  status     ReportStatus @default(OPEN)
+  createdAt  DateTime @default(now())
+
+  @@index([reporterId])
+  @@index([targetType, targetId])
+  @@index([status, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actor     User?    @relation("actor", fields: [actorId], references: [id])
+  actorId   String?
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([createdAt])
+}

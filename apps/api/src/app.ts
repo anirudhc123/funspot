@@ -1,4 +1,5 @@
 import express, { type Express } from 'express';
+import cookieParser from 'cookie-parser';
 
 import { env } from './config/env';
 import apiRouter from './routes';
@@ -14,6 +15,7 @@ export const createApp = (): Express => {
   app.disable('x-powered-by');
   app.use(requestIdMiddleware);
   app.use(requestLogger);
+  app.use(cookieParser());
 
   for (const middleware of securityMiddleware) {
     app.use(middleware);

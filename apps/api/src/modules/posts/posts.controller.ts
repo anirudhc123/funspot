@@ -4,11 +4,12 @@ import { successResponse } from '../../utils/apiResponse';
 import { validate } from '../../validators/zod';
 import { createPostSchema, updatePostSchema } from './posts.validator';
 import { PostsService } from './posts.service';
+import { getRequestUserId } from '../../utils/requestUser';
 
 export class PostsController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const authorId = req.user?.id ?? 'u-1';
+      const authorId = getRequestUserId(req);
       const payload = validate(createPostSchema, req.body, 'post');
       const post = await PostsService.createPost(authorId, payload);
       res.status(201).json(successResponse(post));
@@ -29,7 +30,7 @@ export class PostsController {
 
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const authorId = req.user?.id ?? 'u-1';
+      const authorId = getRequestUserId(req);
       const payload = validate(updatePostSchema, req.body, 'post');
       const post = PostsService.updatePost(authorId, req.params.id, payload);
       res.status(200).json(successResponse(post));
@@ -40,7 +41,7 @@ export class PostsController {
 
   static async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      const authorId = req.user?.id ?? 'u-1';
+      const authorId = getRequestUserId(req);
       const result = PostsService.deletePost(authorId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {

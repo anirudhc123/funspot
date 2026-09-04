@@ -4,11 +4,17 @@ import { UsersService } from './users.service';
 import { successResponse } from '../../utils/apiResponse';
 import { validate } from '../../validators/zod';
 import { profileUpdateSchema } from './users.validator';
+import { AppError } from '../../errors/AppError';
 
 export class UsersController {
+  private static currentUserId(req: Request): string {
+    if (!req.user?.id) throw new AppError(401, 'UNAUTHORIZED', 'Authentication required.');
+    return req.user.id;
+  }
+
   static async getMe(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.get('x-user-id') ?? 'u-1';
+      const userId = UsersController.currentUserId(req);
       const data = UsersService.getMe(userId);
       res.status(200).json(successResponse(data));
     } catch (error) {
@@ -18,7 +24,7 @@ export class UsersController {
 
   static async updateMe(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.get('x-user-id') ?? 'u-1';
+      const userId = UsersController.currentUserId(req);
       const parsed = validate(profileUpdateSchema, req.body, 'profile');
       const updated = UsersService.updateMe(userId, parsed);
       res.status(200).json(successResponse(updated));
@@ -30,7 +36,7 @@ export class UsersController {
   static async getProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const username = req.params.username;
-      const viewerId = req.get('x-user-id') ?? 'u-2';
+      const viewerId = UsersController.currentUserId(req);
       const data = UsersService.getProfile(username, viewerId);
       res.status(200).json(successResponse(data));
     } catch (error) {
@@ -40,7 +46,7 @@ export class UsersController {
 
   static async follow(req: Request, res: Response, next: NextFunction) {
     try {
-      const actorId = req.get('x-user-id') ?? 'u-1';
+      const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
       const result = UsersService.followUser(actorId, targetId);
       res.status(200).json(successResponse(result));
@@ -51,7 +57,7 @@ export class UsersController {
 
   static async unfollow(req: Request, res: Response, next: NextFunction) {
     try {
-      const actorId = req.get('x-user-id') ?? 'u-1';
+      const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
       const result = UsersService.unfollowUser(actorId, targetId);
       res.status(200).json(successResponse(result));
@@ -112,7 +118,7 @@ export class UsersController {
 
   static async block(req: Request, res: Response, next: NextFunction) {
     try {
-      const actorId = req.get('x-user-id') ?? 'u-1';
+      const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
       const result = UsersService.blockUser(actorId, targetId);
       res.status(200).json(successResponse(result));
@@ -123,7 +129,7 @@ export class UsersController {
 
   static async unblock(req: Request, res: Response, next: NextFunction) {
     try {
-      const actorId = req.get('x-user-id') ?? 'u-1';
+      const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
       const result = UsersService.unblockUser(actorId, targetId);
       res.status(200).json(successResponse(result));
@@ -134,7 +140,7 @@ export class UsersController {
 
   static async mute(req: Request, res: Response, next: NextFunction) {
     try {
-      const actorId = req.get('x-user-id') ?? 'u-1';
+      const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
       const result = UsersService.muteUser(actorId, targetId);
       res.status(200).json(successResponse(result));
@@ -145,7 +151,7 @@ export class UsersController {
 
   static async unmute(req: Request, res: Response, next: NextFunction) {
     try {
-      const actorId = req.get('x-user-id') ?? 'u-1';
+      const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
       const result = UsersService.unmuteUser(actorId, targetId);
       res.status(200).json(successResponse(result));

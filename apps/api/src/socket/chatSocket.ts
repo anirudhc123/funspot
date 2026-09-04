@@ -1,11 +1,27 @@
 import { Server, Socket } from 'socket.io';
+import jwt from 'jsonwebtoken';
 
 import { ChatService } from '../modules/chat/chat.service';
+import { env } from '../config/env';
 
 export const registerChatSocket = (io: Server) => {
   io.on('connection', (socket: Socket) => {
-    const userId = (socket.handshake.auth?.userId as string | undefined) ?? (socket.handshake.query.userId as string | undefined);
-    if (!userId) {
+    const token = typeof socket.handshake.auth?.token === 'string' ? socket.handshake.auth.token : undefined;
+    if (!token) {
+      socket.disconnect();
+      return;
+    }
+
+    let userId: string;
+    try {
+      const payload = jwt.verify(token.replace(/^Bearer\s+/i, ''), env.JWT_ACCESS_SECRET, {
+        issuer: 'funspot',
+        audience: 'funspot-api',
+        algorithms: ['HS256'],
+      });
+      if (typeof payload === 'string' || typeof payload.sub !== 'string') throw new Error('Invalid socket token.');
+      userId = payload.sub;
+    } catch {
       socket.disconnect();
       return;
     }
@@ -49,10 +65,22 @@ export const registerChatSocket = (io: Server) => {
     });
 
     socket.on('typing:start', (payload: { conversationId: string }) => {
+      try {
+        ChatService.getConversation(payload.conversationId, userId);
+      } catch {
+        socket.emit('error', { code: 'CONVERSATION_FORBIDDEN', message: 'You cannot access this conversation.' });
+        return;
+      }
       socket.to(`conversation:${payload.conversationId}`).emit('typing:start', { userId, conversationId: payload.conversationId });
     });
 
     socket.on('typing:stop', (payload: { conversationId: string }) => {
+      try {
+        ChatService.getConversation(payload.conversationId, userId);
+      } catch {
+        socket.emit('error', { code: 'CONVERSATION_FORBIDDEN', message: 'You cannot access this conversation.' });
+        return;
+      }
       socket.to(`conversation:${payload.conversationId}`).emit('typing:stop', { userId, conversationId: payload.conversationId });
     });
 

@@ -5,9 +5,7 @@ import crypto from 'crypto';
 import { AppError } from '../../errors/AppError';
 import { AuthRepository } from './auth.repository';
 import { UserRecord } from '../users/users.repository';
-
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? 'local-dev-access-secret';
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? 'local-dev-refresh-secret';
+import { env } from '../../config/env';
 
 export type AuthTokens = {
   accessToken: string;
@@ -76,8 +74,25 @@ export class AuthService {
   }
 
   static refresh(refreshToken: string) {
+    let payload: jwt.JwtPayload;
+    try {
+      const verified = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, {
+        issuer: 'funspot',
+        audience: 'funspot-api',
+        algorithms: ['HS256'],
+      });
+      if (typeof verified === 'string' || verified.type !== 'refresh' || typeof verified.sub !== 'string') {
+        throw new Error('Invalid refresh token.');
+      }
+      payload = verified;
+    } catch {
+      throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid.');
+    }
+
     const session = AuthRepository.findSessionByRefreshToken(refreshToken);
-    if (!session) throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid.');
+    if (!session || !payload.sub || session.expiresAt <= new Date()) {
+      throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid.');
+    }
 
     const user = AuthRepository.findById(session.userId) ?? undefined;
     if (!user) throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid.');
@@ -98,7 +113,8 @@ export class AuthService {
     const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60);
     AuthRepository.createResetToken(user.id, token, expiresAt);
-    return { sent: true, token };
+    void token;
+    return { sent: true };
   }
 
   static resetPassword(token: string, password: string) {
@@ -114,6 +130,7 @@ export class AuthService {
 
     user.passwordHash = bcrypt.hashSync(password, 10);
     AuthRepository.consumeResetToken(token);
+    AuthRepository.revokeUserSessions(user.id);
     return { reset: true };
   }
 
@@ -129,14 +146,14 @@ export class AuthService {
   }
 
   static issueTokens(user: UserRecord): AuthTokens {
-    const accessToken = jwt.sign({ sub: user.id, email: user.email, username: user.username }, ACCESS_SECRET, {
+    const accessToken = jwt.sign({ sub: user.id, email: user.email, username: user.username }, env.JWT_ACCESS_SECRET, {
       expiresIn: '15m',
       issuer: 'funspot',
       audience: 'funspot-api',
     });
 
     const refreshJti = crypto.randomUUID();
-    const refreshToken = jwt.sign({ sub: user.id, type: 'refresh', jti: refreshJti }, REFRESH_SECRET, {
+    const refreshToken = jwt.sign({ sub: user.id, type: 'refresh', jti: refreshJti }, env.JWT_REFRESH_SECRET, {
       expiresIn: '7d',
       issuer: 'funspot',
       audience: 'funspot-api',

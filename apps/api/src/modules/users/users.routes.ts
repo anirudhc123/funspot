@@ -8,11 +8,8 @@ const router = Router();
 router.get('/me', requireAuth, UsersController.getMe);
 router.patch('/me', requireAuth, UsersController.updateMe);
 
-router.get('/follow-requests/:requestId/accept', requireAuth, UsersController.acceptFollowRequest);
 router.post('/follow-requests/:requestId/accept', requireAuth, UsersController.acceptFollowRequest);
-router.get('/follow-requests/:requestId/reject', requireAuth, UsersController.rejectFollowRequest);
 router.post('/follow-requests/:requestId/reject', requireAuth, UsersController.rejectFollowRequest);
-router.get('/follow-requests/:requestId/cancel', requireAuth, UsersController.cancelFollowRequest);
 router.delete('/follow-requests/:requestId', requireAuth, UsersController.cancelFollowRequest);
 
 router.get('/:username/followers', requireAuth, UsersController.followers);

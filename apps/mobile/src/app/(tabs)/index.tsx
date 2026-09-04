@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { PostCard } from '../../components/PostCard';
@@ -34,27 +34,30 @@ export default function HomeScreen() {
   const posts = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
-    <View style={styles.page}>
-      <Text style={styles.heading}>Home</Text>
-      {posts.length === 0 ? (
-        <StateView title="No posts yet" description="Follow people and share a new update." action={<Pressable onPress={() => void refetch()} style={styles.action}><Text style={styles.actionText}>Refresh</Text></Pressable>} />
-      ) : (
-        <>
-          {posts.map((post) => <PostCard key={post.id} post={{ ...post, privacy: post.privacy as 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE', hashtags: post.hashtags, mentions: [], updatedAt: post.createdAt }} />)}
-          {hasNextPage ? <Pressable onPress={() => void fetchNextPage()} style={styles.action}><Text style={styles.actionText}>{isFetchingNextPage ? 'Loading...' : 'Load more'}</Text></Pressable> : null}
-        </>
-      )}
-    </View>
+    <FlatList
+      style={styles.list}
+      contentContainerStyle={styles.page}
+      data={posts}
+      keyExtractor={(post) => post.id}
+      ListHeaderComponent={<Text style={styles.heading}>Home</Text>}
+      ListEmptyComponent={<StateView title="No posts yet" description="Follow people and share a new update." action={<Pressable onPress={() => void refetch()} style={styles.action}><Text style={styles.actionText}>Refresh</Text></Pressable>} />}
+      ListFooterComponent={hasNextPage ? <Pressable onPress={() => void fetchNextPage()} style={styles.action}><Text style={styles.actionText}>{isFetchingNextPage ? 'Loading...' : 'Load more'}</Text></Pressable> : undefined}
+      onEndReached={() => {
+        if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+      }}
+      onEndReachedThreshold={0.5}
+      renderItem={({ item: post }) => <PostCard post={{ ...post, privacy: post.privacy as 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE', hashtags: post.hashtags, mentions: [], updatedAt: post.createdAt }} />}
+    />
   );
 }
 
 const styles = StyleSheet.create({
   page: {
-    flex: 1,
     padding: 20,
     backgroundColor: '#f3f4f6',
     gap: 16,
   },
+  list: { flex: 1, backgroundColor: '#f3f4f6' },
   heading: {
     fontSize: 28,
     fontWeight: '800',

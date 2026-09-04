@@ -7,6 +7,11 @@ export class FeedService {
     const limit = Math.min(Math.max(query.limit ?? 20, 1), 50);
     const scope = query.scope ?? 'following';
     const result = FeedRepository.getFeed({ ...query, userId, scope, limit });
+    const followingIds = new Set(
+      UsersRepository.getFollowsByFollower(userId)
+        .filter((follow) => follow.status === 'accepted')
+        .map((follow) => follow.followeeId),
+    );
 
     return {
       items: result.items
@@ -15,7 +20,7 @@ export class FeedService {
           if (!author) return false;
           if (post.authorId === userId) return true;
 
-          const isFollowing = UsersRepository.getFollowsByFollower(userId).some((follow) => follow.followeeId === post.authorId);
+          const isFollowing = followingIds.has(post.authorId);
 
           if (post.privacy === 'PRIVATE') return false;
           if (post.privacy === 'FOLLOWERS') return isFollowing;
@@ -36,16 +41,16 @@ export class FeedService {
 
     switch (type) {
       case 'users':
-        return { users: FeedRepository.searchUsers(normalized), posts: [], hashtags: [] };
+        return { users: FeedRepository.searchUsers(normalized).slice(0, 50), posts: [], hashtags: [] };
       case 'posts':
-        return { users: [], posts: FeedRepository.searchPosts(normalized), hashtags: [] };
+        return { users: [], posts: FeedRepository.searchPosts(normalized).slice(0, 50), hashtags: [] };
       case 'hashtags':
-        return { users: [], posts: [], hashtags: FeedRepository.searchHashtags(normalized) };
+        return { users: [], posts: [], hashtags: FeedRepository.searchHashtags(normalized).slice(0, 50) };
       default:
         return {
-          users: FeedRepository.searchUsers(normalized),
-          posts: FeedRepository.searchPosts(normalized),
-          hashtags: FeedRepository.searchHashtags(normalized),
+          users: FeedRepository.searchUsers(normalized).slice(0, 50),
+          posts: FeedRepository.searchPosts(normalized).slice(0, 50),
+          hashtags: FeedRepository.searchHashtags(normalized).slice(0, 50),
         };
     }
   }

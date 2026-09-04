@@ -4,11 +4,12 @@ import { successResponse } from '../../utils/apiResponse';
 import { validate } from '../../validators/zod';
 import { commentSchema, shareSchema } from './social.validator';
 import { SocialService } from './social.service';
+import { getRequestUserId } from '../../utils/requestUser';
 
 export class SocialController {
   static async like(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id ?? 'u-1';
+      const userId = getRequestUserId(req);
       const result = SocialService.likePost(userId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {
@@ -18,7 +19,7 @@ export class SocialController {
 
   static async unlike(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id ?? 'u-1';
+      const userId = getRequestUserId(req);
       const result = SocialService.unlikePost(userId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {
@@ -28,7 +29,7 @@ export class SocialController {
 
   static async comment(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id ?? 'u-1';
+      const userId = getRequestUserId(req);
       const payload = validate(commentSchema, req.body, 'comment');
       const result = SocialService.createComment(userId, req.params.id, payload);
       res.status(201).json(successResponse(result));
@@ -51,7 +52,7 @@ export class SocialController {
 
   static async deleteComment(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id ?? 'u-1';
+      const userId = getRequestUserId(req);
       const result = SocialService.deleteComment(userId, req.params.commentId);
       res.status(200).json(successResponse(result));
     } catch (error) {
@@ -61,7 +62,7 @@ export class SocialController {
 
   static async save(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id ?? 'u-1';
+      const userId = getRequestUserId(req);
       const result = SocialService.savePost(userId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {
@@ -71,7 +72,7 @@ export class SocialController {
 
   static async unsave(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id ?? 'u-1';
+      const userId = getRequestUserId(req);
       const result = SocialService.unsavePost(userId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {
@@ -81,7 +82,7 @@ export class SocialController {
 
   static async share(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id ?? 'u-1';
+      const userId = getRequestUserId(req);
       const payload = validate(shareSchema, req.body ?? {}, 'share');
       const result = SocialService.sharePost(userId, req.params.id, payload);
       res.status(201).json(successResponse(result));

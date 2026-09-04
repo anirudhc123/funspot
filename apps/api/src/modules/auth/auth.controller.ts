@@ -14,7 +14,7 @@ export class AuthController {
       const result = await AuthService.register(parsed);
       res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
       res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
-      res.status(201).json(successResponse({ user: result.user, tokens: { accessToken: result.accessToken, refreshToken: result.refreshToken } }));
+      res.status(201).json(successResponse({ user: result.user, accessToken: result.accessToken }));
     } catch (error) {
       next(error);
     }
@@ -26,7 +26,7 @@ export class AuthController {
       const result = await AuthService.login(parsed);
       res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
       res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
-      res.status(200).json(successResponse({ user: result.user, tokens: { accessToken: result.accessToken, refreshToken: result.refreshToken } }));
+      res.status(200).json(successResponse({ user: result.user, accessToken: result.accessToken }));
     } catch (error) {
       next(error);
     }
@@ -46,12 +46,12 @@ export class AuthController {
 
   static async refresh(req: Request, res: Response, next: NextFunction) {
     try {
-      const raw = validate(refreshSchema, req.body ?? req.cookies ?? {}, 'refresh');
+      const raw = validate(refreshSchema, { ...req.cookies, ...req.body }, 'refresh');
       const refreshToken = raw.refreshToken ?? req.cookies?.refreshToken;
       const result = AuthService.refresh(refreshToken ?? '');
       res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
       res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
-      res.status(200).json(successResponse({ user: result.user, tokens: { accessToken: result.accessToken, refreshToken: result.refreshToken } }));
+      res.status(200).json(successResponse({ user: result.user, accessToken: result.accessToken }));
     } catch (error) {
       next(error);
     }

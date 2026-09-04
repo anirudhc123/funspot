@@ -2,11 +2,12 @@ import { NextFunction, Request, Response } from 'express';
 
 import { successResponse } from '../../utils/apiResponse';
 import { FeedService } from './feed.service';
+import { getRequestUserId } from '../../utils/requestUser';
 
 export class FeedController {
   static async getFeed(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.id ?? 'u-1';
+      const userId = getRequestUserId(req);
       const scope = (req.query.scope as 'following' | 'latest' | 'explore' | 'hashtag' | undefined) ?? 'following';
       const tag = typeof req.query.tag === 'string' ? req.query.tag : undefined;
       const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;

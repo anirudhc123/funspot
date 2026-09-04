@@ -91,6 +91,13 @@ export class AuthRepository {
     if (session) session.revokedAt = new Date();
   }
 
+  static revokeUserSessions(userId: string): void {
+    const revokedAt = new Date();
+    for (const session of sessions) {
+      if (session.userId === userId && !session.revokedAt) session.revokedAt = revokedAt;
+    }
+  }
+
   static createResetToken(userId: string, token: string, expiresAt: Date): ResetTokenRecord {
     const record = {
       id: `reset-${Date.now()}`,

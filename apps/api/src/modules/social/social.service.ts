@@ -4,8 +4,8 @@ import { UsersRepository } from '../users/users.repository';
 import { SocialRepository } from './social.repository';
 
 export class SocialService {
-  static likePost(userId: string, postId: string) {
-    const user = UsersRepository.findById(userId);
+  static async likePost(userId: string, postId: string) {
+    const user = await UsersRepository.findById(userId);
     const post = PostsRepository.findById(postId);
     if (!user || !post) throw new AppError(404, 'POST_OR_USER_NOT_FOUND', 'Post or user was not found.');
     if (SocialRepository.hasLike(userId, postId)) {
@@ -16,8 +16,8 @@ export class SocialService {
     return { liked: true, like };
   }
 
-  static unlikePost(userId: string, postId: string) {
-    const user = UsersRepository.findById(userId);
+  static async unlikePost(userId: string, postId: string) {
+    const user = await UsersRepository.findById(userId);
     const post = PostsRepository.findById(postId);
     if (!user || !post) throw new AppError(404, 'POST_OR_USER_NOT_FOUND', 'Post or user was not found.');
     if (!SocialRepository.hasLike(userId, postId)) {
@@ -28,8 +28,8 @@ export class SocialService {
     return { unliked: true };
   }
 
-  static savePost(userId: string, postId: string) {
-    const user = UsersRepository.findById(userId);
+  static async savePost(userId: string, postId: string) {
+    const user = await UsersRepository.findById(userId);
     const post = PostsRepository.findById(postId);
     if (!user || !post) throw new AppError(404, 'POST_OR_USER_NOT_FOUND', 'Post or user was not found.');
     if (SocialRepository.hasSave(userId, postId)) {
@@ -40,8 +40,8 @@ export class SocialService {
     return { saved: true, save };
   }
 
-  static unsavePost(userId: string, postId: string) {
-    const user = UsersRepository.findById(userId);
+  static async unsavePost(userId: string, postId: string) {
+    const user = await UsersRepository.findById(userId);
     const post = PostsRepository.findById(postId);
     if (!user || !post) throw new AppError(404, 'POST_OR_USER_NOT_FOUND', 'Post or user was not found.');
     if (!SocialRepository.hasSave(userId, postId)) {
@@ -52,8 +52,8 @@ export class SocialService {
     return { unsaved: true };
   }
 
-  static createComment(userId: string, postId: string, input: { text: string; parentId?: string }) {
-    const user = UsersRepository.findById(userId);
+  static async createComment(userId: string, postId: string, input: { text: string; parentId?: string }) {
+    const user = await UsersRepository.findById(userId);
     const post = PostsRepository.findById(postId);
     if (!user || !post) throw new AppError(404, 'POST_OR_USER_NOT_FOUND', 'Post or user was not found.');
     if (!input.text.trim()) throw new AppError(400, 'COMMENT_EMPTY', 'Comment text cannot be empty.');
@@ -93,8 +93,8 @@ export class SocialService {
     return { deleted: true };
   }
 
-  static sharePost(userId: string, postId: string, input?: { text?: string }) {
-    const user = UsersRepository.findById(userId);
+  static async sharePost(userId: string, postId: string, input?: { text?: string }) {
+    const user = await UsersRepository.findById(userId);
     const post = PostsRepository.findById(postId);
     if (!user || !post) throw new AppError(404, 'POST_OR_USER_NOT_FOUND', 'Post or user was not found.');
     const share = SocialRepository.createShare(userId, postId, input?.text?.trim());

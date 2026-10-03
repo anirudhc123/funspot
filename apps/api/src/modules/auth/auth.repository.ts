@@ -1,13 +1,14 @@
-import { UserRecord, users } from '../users/users.repository';
+import { createHash } from 'crypto';
+
+import { prisma } from '../../database/prisma';
+import { UsersRepository, type UserRecord } from '../users/users.repository';
 
 export type SessionRecord = {
   id: string;
   userId: string;
-  refreshToken: string;
   userAgent?: string;
   ipAddress?: string;
   expiresAt: Date;
-  revokedAt?: Date;
   createdAt: Date;
 };
 
@@ -29,73 +30,84 @@ export type VerificationTokenRecord = {
   createdAt: Date;
 };
 
-export const sessions: SessionRecord[] = [];
+// Password-reset and email-verification tokens intentionally remain in memory until their schema models exist.
 export const resetTokens: ResetTokenRecord[] = [];
 export const verificationTokens: VerificationTokenRecord[] = [];
 
+const hashRefreshToken = (token: string) => createHash('sha256').update(token).digest('hex');
+
 export class AuthRepository {
-  static findByEmail(email: string): UserRecord | undefined {
-    return users.find((user) => user.email.toLowerCase() === email.toLowerCase());
+  static findByEmail(email: string): Promise<UserRecord | undefined> {
+    return UsersRepository.findByEmail(email);
   }
 
-  static findByUsername(username: string): UserRecord | undefined {
-    return users.find((user) => user.username.toLowerCase() === username.toLowerCase());
+  static findByUsername(username: string): Promise<UserRecord | undefined> {
+    return UsersRepository.findByUsernameInsensitive(username);
   }
 
-  static findById(id: string): UserRecord | undefined {
-    return users.find((user) => user.id === id);
+  static findById(id: string): Promise<UserRecord | undefined> {
+    return UsersRepository.findById(id);
   }
 
-  static createUser(input: Pick<UserRecord, 'email' | 'username' | 'displayName' | 'passwordHash' | 'privacy'>): UserRecord {
-    const user: UserRecord = {
-      id: `u-${Date.now()}`,
-      email: input.email,
-      username: input.username,
-      displayName: input.displayName,
-      bio: undefined,
-      avatar: undefined,
-      coverImage: undefined,
-      website: undefined,
-      location: undefined,
-      privacy: input.privacy ?? 'public',
-      role: 'USER',
-      status: 'ACTIVE',
-      passwordHash: input.passwordHash,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  static createUser(input: Pick<UserRecord, 'email' | 'username' | 'displayName' | 'passwordHash' | 'privacy'>): Promise<UserRecord> {
+    return UsersRepository.create(input);
+  }
+
+  static async createSession(
+    userId: string,
+    refreshToken: string,
+    expiresAt: Date,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<SessionRecord> {
+    const session = await prisma.$transaction(async (transaction) => {
+      const created = await transaction.session.create({
+        data: { userId, userAgent, ip: ipAddress, expiresAt },
+      });
+      await transaction.refreshToken.create({
+        data: { userId, sessionId: created.id, tokenHash: hashRefreshToken(refreshToken) },
+      });
+      return created;
+    });
+    return {
+      id: session.id,
+      userId: session.userId,
+      userAgent: session.userAgent ?? undefined,
+      ipAddress: session.ip ?? undefined,
+      expiresAt: session.expiresAt ?? expiresAt,
+      createdAt: session.createdAt,
     };
-    users.push(user);
-    return user;
   }
 
-  static createSession(userId: string, refreshToken: string, expiresAt: Date, userAgent?: string, ipAddress?: string): SessionRecord {
-    const session: SessionRecord = {
-      id: `session-${Date.now()}`,
-      userId,
-      refreshToken,
-      userAgent,
-      ipAddress,
-      expiresAt,
-      createdAt: new Date(),
+  static async findSessionByRefreshToken(refreshToken: string): Promise<SessionRecord | undefined> {
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { tokenHash: hashRefreshToken(refreshToken) },
+      include: { session: true },
+    });
+    if (!storedToken || storedToken.revoked || !storedToken.session) return undefined;
+    return {
+      id: storedToken.session.id,
+      userId: storedToken.session.userId,
+      userAgent: storedToken.session.userAgent ?? undefined,
+      ipAddress: storedToken.session.ip ?? undefined,
+      expiresAt: storedToken.session.expiresAt ?? storedToken.createdAt,
+      createdAt: storedToken.session.createdAt,
     };
-    sessions.push(session);
-    return session;
   }
 
-  static findSessionByRefreshToken(refreshToken: string): SessionRecord | undefined {
-    return sessions.find((s) => s.refreshToken === refreshToken && !s.revokedAt);
+  static async revokeSession(refreshToken: string): Promise<void> {
+    await prisma.refreshToken.updateMany({
+      where: { tokenHash: hashRefreshToken(refreshToken), revoked: false },
+      data: { revoked: true },
+    });
   }
 
-  static revokeSession(refreshToken: string): void {
-    const session = sessions.find((s) => s.refreshToken === refreshToken);
-    if (session) session.revokedAt = new Date();
-  }
-
-  static revokeUserSessions(userId: string): void {
+  static async revokeUserSessions(userId: string): Promise<void> {
     const revokedAt = new Date();
-    for (const session of sessions) {
-      if (session.userId === userId && !session.revokedAt) session.revokedAt = revokedAt;
-    }
+    await prisma.$transaction([
+      prisma.refreshToken.updateMany({ where: { userId, revoked: false }, data: { revoked: true } }),
+      prisma.session.updateMany({ where: { userId }, data: { expiresAt: revokedAt } }),
+    ]);
   }
 
   static createResetToken(userId: string, token: string, expiresAt: Date): ResetTokenRecord {

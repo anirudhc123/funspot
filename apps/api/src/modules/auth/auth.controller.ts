@@ -35,7 +35,7 @@ export class AuthController {
   static async logout(req: Request, res: Response, next: NextFunction) {
     try {
       const token = req.cookies?.refreshToken ?? req.body.refreshToken ?? req.get('x-refresh-token') ?? '';
-      const result = AuthService.logout(token);
+      const result = await AuthService.logout(token);
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
       res.status(200).json(successResponse(result));
@@ -48,7 +48,7 @@ export class AuthController {
     try {
       const raw = validate(refreshSchema, { ...req.cookies, ...req.body }, 'refresh');
       const refreshToken = raw.refreshToken ?? req.cookies?.refreshToken;
-      const result = AuthService.refresh(refreshToken ?? '');
+      const result = await AuthService.refresh(refreshToken ?? '');
       res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
       res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: secureCookies, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.status(200).json(successResponse({ user: result.user, accessToken: result.accessToken }));
@@ -60,7 +60,7 @@ export class AuthController {
   static async forgotPassword(req: Request, res: Response, next: NextFunction) {
     try {
       const parsed = validate(forgotPasswordSchema, req.body, 'forgot-password');
-      const result = AuthService.forgotPassword(parsed.email);
+      const result = await AuthService.forgotPassword(parsed.email);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -70,7 +70,7 @@ export class AuthController {
   static async resetPassword(req: Request, res: Response, next: NextFunction) {
     try {
       const parsed = validate(resetPasswordSchema, req.body, 'reset-password');
-      const result = AuthService.resetPassword(parsed.token, parsed.password);
+      const result = await AuthService.resetPassword(parsed.token, parsed.password);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);

@@ -1,5 +1,5 @@
 import { posts, PostRecord } from '../posts/posts.repository';
-import { follows, users } from '../users/users.repository';
+import { follows, UsersRepository, type UserRecord } from '../users/users.repository';
 
 export type FeedScope = 'following' | 'latest' | 'explore' | 'hashtag';
 
@@ -48,9 +48,10 @@ export class FeedRepository {
     };
   }
 
-  static searchUsers(query: string) {
+  static async searchUsers(query: string): Promise<UserRecord[]> {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return [];
+    const users = await UsersRepository.listAll();
     return users.filter((user) => user.username.toLowerCase().includes(normalized) || user.displayName.toLowerCase().includes(normalized));
   }
 

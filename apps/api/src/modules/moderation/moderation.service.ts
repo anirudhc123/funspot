@@ -8,15 +8,15 @@ export class ModerationService {
     return { USER: 0, MODERATOR: 1, ADMIN: 2, SUPER_ADMIN: 3 }[role];
   }
 
-  private static assertCanManage(actorId: string, target: { id: string; role: UserRole }) {
-    const actor = UsersRepository.findById(actorId);
+  private static async assertCanManage(actorId: string, target: { id: string; role: UserRole }) {
+    const actor = await UsersRepository.findById(actorId);
     if (!actor || actor.id === target.id || ModerationService.roleLevel(actor.role) <= ModerationService.roleLevel(target.role)) {
       throw new AppError(403, 'INSUFFICIENT_PRIVILEGES', 'You cannot manage this account.');
     }
   }
 
-  static createReport(reporterId: string, input: { targetType: ReportTargetType; targetId: string; reason?: string }) {
-    if (input.targetType === 'USER' && !UsersRepository.findById(input.targetId)) {
+  static async createReport(reporterId: string, input: { targetType: ReportTargetType; targetId: string; reason?: string }) {
+    if (input.targetType === 'USER' && !await UsersRepository.findById(input.targetId)) {
       throw new AppError(404, 'REPORT_TARGET_NOT_FOUND', 'The reported user was not found.');
     }
     if (input.targetType === 'POST' && !PostsRepository.findById(input.targetId)) {
@@ -37,36 +37,35 @@ export class ModerationService {
     return updated;
   }
 
-  static listUsers() {
-    return UsersRepository.listAll().map((user) => ({
-      ...UsersRepository.serialize(user),
+  static async listUsers() {
+    const users = await UsersRepository.listAll();
+    return Promise.all(users.map(async (user) => ({
+      ...await UsersRepository.serialize(user),
       ...ModerationRepository.serializeUserStatus(user.status, user.role),
-    }));
+    })));
   }
 
-  static updateRole(actorId: string, userId: string, role: UserRole) {
-    const user = UsersRepository.findById(userId);
+  static async updateRole(actorId: string, userId: string, role: UserRole) {
+    const user = await UsersRepository.findById(userId);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User was not found.');
-    ModerationService.assertCanManage(actorId, user);
-    const actor = UsersRepository.findById(actorId);
+    await ModerationService.assertCanManage(actorId, user);
+    const actor = await UsersRepository.findById(actorId);
     if (!actor || ModerationService.roleLevel(actor.role) < ModerationService.roleLevel(role)) {
       throw new AppError(403, 'INSUFFICIENT_PRIVILEGES', 'You cannot grant this role.');
     }
-    user.role = role;
-    UsersRepository.update(user, {});
+    const updated = await UsersRepository.update(user, { role });
     ModerationRepository.createAudit({ actorId, action: 'UPDATE_USER_ROLE', targetType: 'USER', targetId: userId, metadata: { role } });
-    return UsersRepository.serialize(user);
+    return UsersRepository.serialize(updated);
   }
 
-  static setUserStatus(actorId: string, userId: string, status: UserStatus, reason?: string, durationHours?: number) {
-    const user = UsersRepository.findById(userId);
+  static async setUserStatus(actorId: string, userId: string, status: UserStatus, reason?: string, durationHours?: number) {
+    const user = await UsersRepository.findById(userId);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User was not found.');
-    ModerationService.assertCanManage(actorId, user);
-    user.status = status;
-    user.suspendedUntil = status === 'SUSPENDED' && durationHours ? new Date(Date.now() + durationHours * 60 * 60 * 1000) : undefined;
-    UsersRepository.update(user, {});
+    await ModerationService.assertCanManage(actorId, user);
+    const suspendedUntil = status === 'SUSPENDED' && durationHours ? new Date(Date.now() + durationHours * 60 * 60 * 1000) : undefined;
+    const updated = await UsersRepository.update(user, { status, suspendedUntil });
     ModerationRepository.createAudit({ actorId, action: status === 'BANNED' ? 'BAN_USER' : 'SUSPEND_USER', targetType: 'USER', targetId: userId, metadata: { reason, durationHours } });
-    return ModerationRepository.serializeUserStatus(user.status, user.role);
+    return ModerationRepository.serializeUserStatus(updated.status, updated.role);
   }
 
   static deletePost(actorId: string, postId: string, reason?: string) {
@@ -81,8 +80,8 @@ export class ModerationService {
     return [...ModerationRepository.listAuditLogs()].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  static dashboard() {
-    const users = UsersRepository.listAll();
+  static async dashboard() {
+    const users = await UsersRepository.listAll();
     return {
       users: users.length,
       activeUsers: users.filter((user) => user.status === 'ACTIVE').length,

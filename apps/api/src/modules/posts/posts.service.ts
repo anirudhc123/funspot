@@ -42,7 +42,7 @@ export class PostsService {
   }
 
   static async createPost(authorId: string, payload: { text?: string; location?: string; privacy?: PostPrivacy; media?: Array<{ kind: 'image' | 'video'; fileName: string; mimeType: string; sizeBytes: number; url?: string; storageKey?: string; width?: number; height?: number; durationSeconds?: number }> }) {
-    const user = UsersRepository.findById(authorId);
+    const user = await UsersRepository.findById(authorId);
     if (!user) {
       throw new AppError(404, 'USER_NOT_FOUND', 'Author was not found.');
     }

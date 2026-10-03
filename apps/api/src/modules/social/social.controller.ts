@@ -10,7 +10,7 @@ export class SocialController {
   static async like(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = getRequestUserId(req);
-      const result = SocialService.likePost(userId, req.params.id);
+      const result = await SocialService.likePost(userId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -20,7 +20,7 @@ export class SocialController {
   static async unlike(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = getRequestUserId(req);
-      const result = SocialService.unlikePost(userId, req.params.id);
+      const result = await SocialService.unlikePost(userId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -31,7 +31,7 @@ export class SocialController {
     try {
       const userId = getRequestUserId(req);
       const payload = validate(commentSchema, req.body, 'comment');
-      const result = SocialService.createComment(userId, req.params.id, payload);
+      const result = await SocialService.createComment(userId, req.params.id, payload);
       res.status(201).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -63,7 +63,7 @@ export class SocialController {
   static async save(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = getRequestUserId(req);
-      const result = SocialService.savePost(userId, req.params.id);
+      const result = await SocialService.savePost(userId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -73,7 +73,7 @@ export class SocialController {
   static async unsave(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = getRequestUserId(req);
-      const result = SocialService.unsavePost(userId, req.params.id);
+      const result = await SocialService.unsavePost(userId, req.params.id);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -84,7 +84,7 @@ export class SocialController {
     try {
       const userId = getRequestUserId(req);
       const payload = validate(shareSchema, req.body ?? {}, 'share');
-      const result = SocialService.sharePost(userId, req.params.id, payload);
+      const result = await SocialService.sharePost(userId, req.params.id, payload);
       res.status(201).json(successResponse(result));
     } catch (error) {
       next(error);

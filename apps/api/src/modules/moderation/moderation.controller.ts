@@ -11,23 +11,23 @@ const actorId = (req: Request): string => getRequestUserId(req);
 export class ModerationController {
   static async createReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = ModerationService.createReport(actorId(req), validate(reportSchema, req.body, 'report'));
+      const result = await ModerationService.createReport(actorId(req), validate(reportSchema, req.body, 'report'));
       res.status(201).json(successResponse(result));
     } catch (error) { next(error); }
   }
 
   static async dashboard(_req: Request, res: Response, next: NextFunction) {
-    try { res.status(200).json(successResponse(ModerationService.dashboard())); } catch (error) { next(error); }
+    try { res.status(200).json(successResponse(await ModerationService.dashboard())); } catch (error) { next(error); }
   }
 
   static async listUsers(_req: Request, res: Response, next: NextFunction) {
-    try { res.status(200).json(successResponse(ModerationService.listUsers())); } catch (error) { next(error); }
+    try { res.status(200).json(successResponse(await ModerationService.listUsers())); } catch (error) { next(error); }
   }
 
   static async updateRole(req: Request, res: Response, next: NextFunction) {
     try {
       const payload = validate(roleUpdateSchema, req.body, 'role');
-      res.status(200).json(successResponse(ModerationService.updateRole(actorId(req), req.params.id, payload.role)));
+      res.status(200).json(successResponse(await ModerationService.updateRole(actorId(req), req.params.id, payload.role)));
     } catch (error) { next(error); }
   }
 
@@ -35,7 +35,7 @@ export class ModerationController {
     try {
       const payload = validate(userActionSchema, req.body ?? {}, 'user action');
       const status = req.path.endsWith('/ban') ? 'BANNED' : 'SUSPENDED';
-      res.status(200).json(successResponse(ModerationService.setUserStatus(actorId(req), req.params.id, status, payload.reason, payload.durationHours)));
+      res.status(200).json(successResponse(await ModerationService.setUserStatus(actorId(req), req.params.id, status, payload.reason, payload.durationHours)));
     } catch (error) { next(error); }
   }
 

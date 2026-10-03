@@ -15,7 +15,7 @@ export class UsersController {
   static async getMe(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = UsersController.currentUserId(req);
-      const data = UsersService.getMe(userId);
+      const data = await UsersService.getMe(userId);
       res.status(200).json(successResponse(data));
     } catch (error) {
       next(error);
@@ -26,7 +26,7 @@ export class UsersController {
     try {
       const userId = UsersController.currentUserId(req);
       const parsed = validate(profileUpdateSchema, req.body, 'profile');
-      const updated = UsersService.updateMe(userId, parsed);
+      const updated = await UsersService.updateMe(userId, parsed);
       res.status(200).json(successResponse(updated));
     } catch (error) {
       next(error);
@@ -37,7 +37,7 @@ export class UsersController {
     try {
       const username = req.params.username;
       const viewerId = UsersController.currentUserId(req);
-      const data = UsersService.getProfile(username, viewerId);
+      const data = await UsersService.getProfile(username, viewerId);
       res.status(200).json(successResponse(data));
     } catch (error) {
       next(error);
@@ -48,7 +48,7 @@ export class UsersController {
     try {
       const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
-      const result = UsersService.followUser(actorId, targetId);
+      const result = await UsersService.followUser(actorId, targetId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -59,7 +59,7 @@ export class UsersController {
     try {
       const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
-      const result = UsersService.unfollowUser(actorId, targetId);
+      const result = await UsersService.unfollowUser(actorId, targetId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -69,7 +69,7 @@ export class UsersController {
   static async acceptFollowRequest(req: Request, res: Response, next: NextFunction) {
     try {
       const requestId = req.params.requestId;
-      const result = UsersService.acceptFollowRequest(requestId);
+      const result = await UsersService.acceptFollowRequest(requestId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -79,7 +79,7 @@ export class UsersController {
   static async rejectFollowRequest(req: Request, res: Response, next: NextFunction) {
     try {
       const requestId = req.params.requestId;
-      const result = UsersService.rejectFollowRequest(requestId);
+      const result = await UsersService.rejectFollowRequest(requestId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -89,7 +89,7 @@ export class UsersController {
   static async cancelFollowRequest(req: Request, res: Response, next: NextFunction) {
     try {
       const requestId = req.params.requestId;
-      const result = UsersService.cancelFollowRequest(requestId);
+      const result = await UsersService.cancelFollowRequest(requestId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -99,7 +99,7 @@ export class UsersController {
   static async followers(req: Request, res: Response, next: NextFunction) {
     try {
       const username = req.params.username;
-      const result = UsersService.followers(username);
+      const result = await UsersService.followers(username);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -109,7 +109,7 @@ export class UsersController {
   static async following(req: Request, res: Response, next: NextFunction) {
     try {
       const username = req.params.username;
-      const result = UsersService.following(username);
+      const result = await UsersService.following(username);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -120,7 +120,7 @@ export class UsersController {
     try {
       const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
-      const result = UsersService.blockUser(actorId, targetId);
+      const result = await UsersService.blockUser(actorId, targetId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -131,7 +131,7 @@ export class UsersController {
     try {
       const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
-      const result = UsersService.unblockUser(actorId, targetId);
+      const result = await UsersService.unblockUser(actorId, targetId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -142,7 +142,7 @@ export class UsersController {
     try {
       const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
-      const result = UsersService.muteUser(actorId, targetId);
+      const result = await UsersService.muteUser(actorId, targetId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
@@ -153,7 +153,7 @@ export class UsersController {
     try {
       const actorId = UsersController.currentUserId(req);
       const targetId = req.params.id;
-      const result = UsersService.unmuteUser(actorId, targetId);
+      const result = await UsersService.unmuteUser(actorId, targetId);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);

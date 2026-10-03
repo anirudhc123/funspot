@@ -13,7 +13,7 @@ export class FeedController {
       const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
       const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : undefined;
 
-      const result = FeedService.getFeed(userId, { scope, tag, cursor, limit });
+      const result = await FeedService.getFeed(userId, { scope, tag, cursor, limit });
       res.status(200).json({
         success: true,
         data: result.items,
@@ -29,7 +29,7 @@ export class FeedController {
     try {
       const query = typeof req.query.q === 'string' ? req.query.q : '';
       const type = typeof req.query.type === 'string' ? (req.query.type as 'users' | 'posts' | 'hashtags') : undefined;
-      const result = FeedService.search(query, type);
+      const result = await FeedService.search(query, type);
       res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);

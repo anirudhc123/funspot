@@ -1,3 +1,7 @@
+import type { Prisma } from '@prisma/client';
+
+import { prisma } from '../../database/prisma';
+
 export type Privacy = 'public' | 'private' | 'followers';
 export type FollowStatus = 'accepted' | 'pending' | 'rejected';
 export type UserRole = 'USER' | 'MODERATOR' | 'ADMIN' | 'SUPER_ADMIN';
@@ -55,79 +59,93 @@ export type MuteRecord = {
 
 const createUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 
-export const users: UserRecord[] = [
-  {
-    id: 'u-1',
-    email: 'alice@example.com',
-    username: 'alice',
-    displayName: 'Alice',
-    bio: 'Designer and builder.',
-    avatar: 'https://example.com/alice/avatar.png',
-    coverImage: 'https://example.com/alice/cover.png',
-    website: 'https://alice.example',
-    location: 'San Francisco',
-    privacy: 'public',
-    role: 'USER',
-    status: 'ACTIVE',
-    passwordHash: 'hash',
-    createdAt: new Date('2026-01-01T00:00:00Z'),
-    updatedAt: new Date('2026-01-01T00:00:00Z'),
-  },
-  {
-    id: 'u-2',
-    email: 'bob@example.com',
-    username: 'bob',
-    displayName: 'Bob',
-    bio: 'Photographer.',
-    avatar: 'https://example.com/bob/avatar.png',
-    coverImage: 'https://example.com/bob/cover.png',
-    website: 'https://bob.example',
-    location: 'New York',
-    privacy: 'private',
-    role: 'USER',
-    status: 'ACTIVE',
-    passwordHash: 'hash',
-    createdAt: new Date('2026-01-02T00:00:00Z'),
-    updatedAt: new Date('2026-01-02T00:00:00Z'),
-  },
-  {
-    id: 'u-3',
-    email: 'carol@example.com',
-    username: 'carol',
-    displayName: 'Carol',
-    bio: 'Creator.',
-    avatar: 'https://example.com/carol/avatar.png',
-    coverImage: 'https://example.com/carol/cover.png',
-    website: 'https://carol.example',
-    location: 'Austin',
-    privacy: 'followers',
-    role: 'USER',
-    status: 'ACTIVE',
-    passwordHash: 'hash',
-    createdAt: new Date('2026-01-03T00:00:00Z'),
-    updatedAt: new Date('2026-01-03T00:00:00Z'),
-  },
-];
-
 export const follows: FollowRecord[] = [];
 export const blocked: BlockRecord[] = [];
 export const muted: MuteRecord[] = [];
 export const followRequests: FollowRequestRecord[] = [];
 
+type UserWithProfile = Prisma.UserGetPayload<{ include: { profile: true } }>;
+
+function toPrivacy(privacy: string | null | undefined): Privacy {
+  if (privacy === 'private' || privacy === 'followers') return privacy;
+  return 'public';
+}
+
+function toUserRecord(user: UserWithProfile): UserRecord {
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.profile?.username ?? '',
+    displayName: user.profile?.displayName ?? '',
+    bio: user.profile?.bio ?? undefined,
+    avatar: user.profile?.avatarUrl ?? undefined,
+    coverImage: user.profile?.coverImage ?? undefined,
+    website: user.profile?.website ?? undefined,
+    location: user.profile?.location ?? undefined,
+    passwordHash: user.passwordHash ?? undefined,
+    privacy: toPrivacy(user.profile?.privacy),
+    role: user.role,
+    status: user.status,
+    suspendedUntil: user.suspendedUntil ?? undefined,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
 export class UsersRepository {
-  static findById(id: string): UserRecord | undefined {
-    return users.find((user) => user.id === id);
+  static async findById(id: string): Promise<UserRecord | undefined> {
+    const user = await prisma.user.findUnique({ where: { id }, include: { profile: true } });
+    return user ? toUserRecord(user) : undefined;
   }
 
-  static findByUsername(username: string): UserRecord | undefined {
-    return users.find((user) => user.username === username);
+  static async findByEmail(email: string): Promise<UserRecord | undefined> {
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+      include: { profile: true },
+    });
+    return user ? toUserRecord(user) : undefined;
   }
 
-  static listAll(): UserRecord[] {
-    return users;
+  static async findByUsername(username: string): Promise<UserRecord | undefined> {
+    const user = await prisma.user.findFirst({
+      where: { profile: { is: { username } } },
+      include: { profile: true },
+    });
+    return user ? toUserRecord(user) : undefined;
   }
 
-  static serialize(user: UserRecord): Record<string, unknown> {
+  static async findByUsernameInsensitive(username: string): Promise<UserRecord | undefined> {
+    const user = await prisma.user.findFirst({
+      where: { profile: { is: { username: { equals: username, mode: 'insensitive' } } } },
+      include: { profile: true },
+    });
+    return user ? toUserRecord(user) : undefined;
+  }
+
+  static async create(input: Pick<UserRecord, 'email' | 'username' | 'displayName' | 'passwordHash' | 'privacy'>): Promise<UserRecord> {
+    const user = await prisma.user.create({
+      data: {
+        email: input.email,
+        passwordHash: input.passwordHash,
+        profile: {
+          create: {
+            username: input.username,
+            displayName: input.displayName,
+            privacy: input.privacy,
+          },
+        },
+      },
+      include: { profile: true },
+    });
+    return toUserRecord(user);
+  }
+
+  static async listAll(): Promise<UserRecord[]> {
+    const users = await prisma.user.findMany({ include: { profile: true } });
+    return users.map(toUserRecord);
+  }
+
+  static async serialize(user: UserRecord): Promise<Record<string, unknown>> {
     return {
       id: user.id,
       username: user.username,
@@ -138,17 +156,53 @@ export class UsersRepository {
       website: user.website,
       location: user.location,
       privacy: user.privacy,
-        role: user.role,
-        status: user.status,
-        suspendedUntil: user.suspendedUntil,
+      role: user.role,
+      status: user.status,
+      suspendedUntil: user.suspendedUntil,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
   }
 
-  static update(user: UserRecord, changes: Partial<UserRecord>): UserRecord {
-    Object.assign(user, changes, { updatedAt: new Date() });
-    return user;
+  static async update(user: UserRecord, changes: Partial<UserRecord>): Promise<UserRecord> {
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email: changes.email,
+        passwordHash: changes.passwordHash,
+        role: changes.role,
+        status: changes.status,
+        suspendedUntil: Object.hasOwn(changes, 'suspendedUntil')
+          ? changes.suspendedUntil ?? null
+          : undefined,
+        profile: {
+          upsert: {
+            create: {
+              username: changes.username ?? user.username,
+              displayName: changes.displayName ?? user.displayName,
+              bio: changes.bio ?? user.bio ?? null,
+              avatarUrl: changes.avatar ?? user.avatar ?? null,
+              coverImage: changes.coverImage ?? user.coverImage ?? null,
+              website: changes.website ?? user.website ?? null,
+              location: changes.location ?? user.location ?? null,
+              privacy: changes.privacy ?? user.privacy,
+            },
+            update: {
+              username: changes.username,
+              displayName: changes.displayName,
+              bio: changes.bio,
+              avatarUrl: changes.avatar,
+              coverImage: changes.coverImage,
+              website: changes.website,
+              location: changes.location,
+              privacy: changes.privacy,
+            },
+          },
+        },
+      },
+      include: { profile: true },
+    });
+    return toUserRecord(updated);
   }
 
   static createFollow(followerId: string, followeeId: string, status: FollowStatus): FollowRecord {

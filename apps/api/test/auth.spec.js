@@ -1,20 +1,42 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const bcrypt = require('bcryptjs');
+const { createHash } = require('node:crypto');
 
 const { AuthService } = require('../dist/modules/auth/auth.service.js');
-const { AuthRepository, sessions } = require('../dist/modules/auth/auth.repository.js');
-const { users } = require('../dist/modules/users/users.repository.js');
+const { prisma } = require('../dist/database/prisma.js');
+const { cleanupUsers, resetUsers } = require('./helpers/dbUsers.js');
 const { requireAuth } = require('../dist/middleware/requireAuth.js');
 
-const email = 'phase4@example.com';
-const username = 'phase4user';
+const email = 'base@auth.test';
+const username = 'authbase';
+
+test.beforeEach(async () => {
+  await resetUsers('auth', [{
+    id: 'auth-base',
+    email,
+    username,
+    displayName: 'Auth Base',
+    passwordHash: bcrypt.hashSync('Password1', 10),
+  }]);
+});
+
+test.after(async () => {
+  await cleanupUsers('auth');
+  await prisma.$disconnect();
+});
 
 test('registration creates a user and token pair', async () => {
-  const result = await AuthService.register({ email, username, displayName: 'Phase4 User', password: 'Password1' });
+  const result = await AuthService.register({
+    email: 'registration@auth.test',
+    username: 'registered',
+    displayName: 'Phase4 User',
+    password: 'Password1',
+  });
   assert.equal(Boolean(result.accessToken), true);
   assert.equal(Boolean(result.refreshToken), true);
-  assert.equal(result.user.email, email);
-  assert.equal(result.user.username, username);
+  assert.equal(result.user.email, 'registration@auth.test');
+  assert.equal(result.user.username, 'registered');
 });
 
 test('duplicate email is rejected during registration', async () => {
@@ -26,14 +48,14 @@ test('duplicate email is rejected during registration', async () => {
 
 test('duplicate username is rejected during registration', async () => {
   await assert.rejects(
-    () => AuthService.register({ email: 'other@example.com', username, displayName: 'Another', password: 'Password1' }),
+    () => AuthService.register({ email: 'other@auth.test', username, displayName: 'Another', password: 'Password1' }),
     (error) => error.code === 'USERNAME_ALREADY_EXISTS',
   );
 });
 
 test('invalid password is rejected', async () => {
   await assert.rejects(
-    () => AuthService.register({ email: 'invalid@example.com', username: 'invalidpw', displayName: 'Invalid', password: 'short' }),
+    () => AuthService.register({ email: 'invalid@auth.test', username: 'invalidpw', displayName: 'Invalid', password: 'short' }),
     (error) => error.code === 'INVALID_PASSWORD',
   );
 });
@@ -53,7 +75,7 @@ test('wrong password is rejected', async () => {
 
 test('refresh rotates tokens', async () => {
   const first = await AuthService.login({ email, password: 'Password1' });
-  const next = AuthService.refresh(first.refreshToken);
+  const next = await AuthService.refresh(first.refreshToken);
   assert.equal(Boolean(next.accessToken), true);
   assert.equal(Boolean(next.refreshToken), true);
   assert.notEqual(next.refreshToken, first.refreshToken);
@@ -61,9 +83,11 @@ test('refresh rotates tokens', async () => {
 
 test('logout revokes the stored refresh session token', async () => {
   const first = await AuthService.login({ email, password: 'Password1' });
-  const result = AuthService.logout(first.refreshToken);
+  const result = await AuthService.logout(first.refreshToken);
+  const tokenHash = createHash('sha256').update(first.refreshToken).digest('hex');
+  const storedToken = await prisma.refreshToken.findUnique({ where: { tokenHash } });
   assert.equal(result.loggedOut, true);
-  assert.equal(sessions.some((s) => s.refreshToken === first.refreshToken && s.revokedAt), true);
+  assert.equal(storedToken.revoked, true);
 });
 
 test('protected middleware authenticates a valid bearer token', async () => {
@@ -71,7 +95,7 @@ test('protected middleware authenticates a valid bearer token', async () => {
   const req = { headers: { authorization: `Bearer ${result.accessToken}` }, cookies: {}, user: undefined };
   const res = { locals: {} };
   let nextCalled = false;
-  requireAuth(req, res, () => { nextCalled = true; });
+  await requireAuth(req, res, () => { nextCalled = true; });
   assert.equal(nextCalled, true);
   assert.equal(req.user.username, username);
 });

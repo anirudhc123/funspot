@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const { AppError } = require('../dist/errors/AppError.js');
 const { requireRole } = require('../dist/middleware/requireRole.js');
 const { ModerationService } = require('../dist/modules/moderation/moderation.service.js');
-const { users } = require('../dist/modules/users/users.repository.js');
+const { prisma } = require('../dist/database/prisma.js');
+const { cleanupUsers, resetUsers } = require('./helpers/dbUsers.js');
 
 const requestFor = (role) => ({ user: { id: 'actor', role } });
 const runGuard = (role, required) => {
@@ -33,13 +34,17 @@ test('super admin can access role management', () => {
   assert.equal(runGuard('SUPER_ADMIN', 'SUPER_ADMIN'), undefined);
 });
 
-test('moderation service records role changes and audit events', () => {
-  const target = users.find((user) => user.id === 'u-2');
-  const actor = users.find((user) => user.id === 'u-1');
-  assert.ok(target);
-  assert.ok(actor);
-  actor.role = 'SUPER_ADMIN';
-  const result = ModerationService.updateRole(actor.id, target.id, 'MODERATOR');
+test.after(async () => {
+  await cleanupUsers('moderation');
+  await prisma.$disconnect();
+});
+
+test('moderation service records role changes and audit events', async () => {
+  const [actor, target] = await resetUsers('moderation', [
+    { id: 'moderation-u-1', email: 'actor@moderation.test', username: 'moderation_actor', displayName: 'Actor', role: 'SUPER_ADMIN' },
+    { id: 'moderation-u-2', email: 'target@moderation.test', username: 'moderation_target', displayName: 'Target' },
+  ]);
+  const result = await ModerationService.updateRole(actor.id, target.id, 'MODERATOR');
   assert.equal(result.role, 'MODERATOR');
   assert.equal(ModerationService.listAuditLogs().some((entry) => entry.action === 'UPDATE_USER_ROLE'), true);
 });

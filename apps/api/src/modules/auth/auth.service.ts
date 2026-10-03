@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 import { AppError } from '../../errors/AppError';
 import { AuthRepository } from './auth.repository';
-import { UserRecord } from '../users/users.repository';
+import { UsersRepository, UserRecord } from '../users/users.repository';
 import { env } from '../../config/env';
 
 export type AuthTokens = {
@@ -14,11 +14,11 @@ export type AuthTokens = {
 
 export class AuthService {
   static async register(input: { email: string; username: string; displayName: string; password: string }) {
-    if (AuthRepository.findByEmail(input.email)) {
+    if (await AuthRepository.findByEmail(input.email)) {
       throw new AppError(409, 'EMAIL_ALREADY_EXISTS', 'That email is already registered.');
     }
 
-    if (AuthRepository.findByUsername(input.username)) {
+    if (await AuthRepository.findByUsername(input.username)) {
       throw new AppError(409, 'USERNAME_ALREADY_EXISTS', 'That username is already taken.');
     }
 
@@ -27,7 +27,7 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(input.password, 10);
-    const user = AuthRepository.createUser({
+    const user = await AuthRepository.createUser({
       email: input.email,
       username: input.username,
       displayName: input.displayName,
@@ -36,7 +36,7 @@ export class AuthService {
     });
 
     const tokens = AuthService.issueTokens(user);
-    AuthRepository.createSession(user.id, tokens.refreshToken, new Date(Date.now() + 1000 * 60 * 60 * 24 * 7));
+    await AuthRepository.createSession(user.id, tokens.refreshToken, new Date(Date.now() + 1000 * 60 * 60 * 24 * 7));
 
     return {
       user: AuthService.safeUser(user),
@@ -47,7 +47,7 @@ export class AuthService {
   static async login(input: { email?: string; username?: string; password: string }) {
     const identifier = input.email ?? input.username;
     const user = identifier
-      ? AuthRepository.findByEmail(identifier) ?? AuthRepository.findByUsername(identifier)
+      ? (await AuthRepository.findByEmail(identifier)) ?? (await AuthRepository.findByUsername(identifier))
       : undefined;
 
     if (!user || !user.passwordHash) {
@@ -60,7 +60,7 @@ export class AuthService {
     }
 
     const tokens = AuthService.issueTokens(user);
-    AuthRepository.createSession(user.id, tokens.refreshToken, new Date(Date.now() + 1000 * 60 * 60 * 24 * 7));
+    await AuthRepository.createSession(user.id, tokens.refreshToken, new Date(Date.now() + 1000 * 60 * 60 * 24 * 7));
 
     return {
       user: AuthService.safeUser(user),
@@ -68,12 +68,12 @@ export class AuthService {
     };
   }
 
-  static logout(refreshToken: string) {
-    AuthRepository.revokeSession(refreshToken);
+  static async logout(refreshToken: string) {
+    await AuthRepository.revokeSession(refreshToken);
     return { loggedOut: true };
   }
 
-  static refresh(refreshToken: string) {
+  static async refresh(refreshToken: string) {
     let payload: jwt.JwtPayload;
     try {
       const verified = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, {
@@ -89,23 +89,23 @@ export class AuthService {
       throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid.');
     }
 
-    const session = AuthRepository.findSessionByRefreshToken(refreshToken);
+    const session = await AuthRepository.findSessionByRefreshToken(refreshToken);
     if (!session || !payload.sub || session.expiresAt <= new Date()) {
       throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid.');
     }
 
-    const user = AuthRepository.findById(session.userId) ?? undefined;
+    const user = await AuthRepository.findById(session.userId);
     if (!user) throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid.');
 
     const newTokens = AuthService.issueTokens(user);
-    AuthRepository.revokeSession(refreshToken);
-    AuthRepository.createSession(user.id, newTokens.refreshToken, new Date(Date.now() + 1000 * 60 * 60 * 24 * 7));
+    await AuthRepository.revokeSession(refreshToken);
+    await AuthRepository.createSession(user.id, newTokens.refreshToken, new Date(Date.now() + 1000 * 60 * 60 * 24 * 7));
 
     return { user: AuthService.safeUser(user), ...newTokens };
   }
 
-  static forgotPassword(email: string) {
-    const user = AuthRepository.findByEmail(email);
+  static async forgotPassword(email: string) {
+    const user = await AuthRepository.findByEmail(email);
     if (!user) {
       return { sent: true };
     }
@@ -117,7 +117,7 @@ export class AuthService {
     return { sent: true };
   }
 
-  static resetPassword(token: string, password: string) {
+  static async resetPassword(token: string, password: string) {
     const record = AuthRepository.getResetToken(token);
     if (!record) throw new AppError(400, 'INVALID_RESET_TOKEN', 'Reset token is invalid.');
 
@@ -125,20 +125,20 @@ export class AuthService {
       throw new AppError(400, 'INVALID_PASSWORD', 'Password must be at least 8 characters and include a number and uppercase letter.');
     }
 
-    const user = AuthRepository.findById(record.userId);
+    const user = await AuthRepository.findById(record.userId);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User was not found.');
 
-    user.passwordHash = bcrypt.hashSync(password, 10);
+    await UsersRepository.update(user, { passwordHash: bcrypt.hashSync(password, 10) });
     AuthRepository.consumeResetToken(token);
-    AuthRepository.revokeUserSessions(user.id);
+    await AuthRepository.revokeUserSessions(user.id);
     return { reset: true };
   }
 
-  static verifyEmail(token: string) {
+  static async verifyEmail(token: string) {
     const record = AuthRepository.getVerificationToken(token);
     if (!record) throw new AppError(400, 'INVALID_VERIFICATION_TOKEN', 'Verification token is invalid.');
 
-    const user = AuthRepository.findById(record.userId);
+    const user = await AuthRepository.findById(record.userId);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User was not found.');
 
     AuthRepository.consumeVerificationToken(token);

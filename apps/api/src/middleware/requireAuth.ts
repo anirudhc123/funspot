@@ -5,7 +5,7 @@ import { AppError } from '../errors/AppError';
 import { UsersRepository } from '../modules/users/users.repository';
 import { env } from '../config/env';
 
-export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   const raw = req.headers.authorization ?? '';
   const token = raw.startsWith('Bearer ') ? raw.slice(7) : req.cookies?.accessToken;
   if (!token) {
@@ -21,7 +21,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     if (typeof payload !== 'object' || typeof payload.sub !== 'string') {
       throw new Error('Invalid token subject.');
     }
-    const user = UsersRepository.findById(payload.sub);
+    const user = await UsersRepository.findById(payload.sub);
     if (!user) return next(new AppError(401, 'UNAUTHORIZED', 'User account was not found.'));
     if (user.status === 'BANNED') return next(new AppError(403, 'ACCOUNT_BANNED', 'This account has been banned.'));
     if (user.status === 'SUSPENDED' && (!user.suspendedUntil || user.suspendedUntil > new Date())) {

@@ -2,8 +2,8 @@ import { AppError } from '../../errors/AppError';
 import { UsersRepository, type UserRecord } from './users.repository';
 
 export class UsersService {
-  static getMe(userId: string) {
-    const user = UsersRepository.findById(userId);
+  static async getMe(userId: string) {
+    const user = await UsersRepository.findById(userId);
     if (!user) {
       throw new AppError(404, 'USER_NOT_FOUND', 'Current user was not found.');
     }
@@ -11,13 +11,13 @@ export class UsersService {
     return UsersRepository.serialize(user);
   }
 
-  static updateMe(userId: string, changes: Partial<UserRecord>) {
-    const user = UsersRepository.findById(userId);
+  static async updateMe(userId: string, changes: Partial<UserRecord>) {
+    const user = await UsersRepository.findById(userId);
     if (!user) {
       throw new AppError(404, 'USER_NOT_FOUND', 'Current user was not found.');
     }
 
-    const nextUser = UsersRepository.update(user, {
+    const nextUser = await UsersRepository.update(user, {
       ...changes,
       username: changes.username ?? user.username,
       displayName: changes.displayName ?? user.displayName,
@@ -32,8 +32,8 @@ export class UsersService {
     return UsersRepository.serialize(nextUser);
   }
 
-  static getProfile(username: string, viewerId?: string) {
-    const user = UsersRepository.findByUsername(username);
+  static async getProfile(username: string, viewerId?: string) {
+    const user = await UsersRepository.findByUsername(username);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'Profile was not found.');
 
     if (user.privacy === 'private' && viewerId !== user.id) {
@@ -49,9 +49,9 @@ export class UsersService {
     return UsersRepository.serialize(user);
   }
 
-  static followUser(actorId: string, targetId: string) {
-    const actor = UsersRepository.findById(actorId);
-    const target = UsersRepository.findById(targetId);
+  static async followUser(actorId: string, targetId: string) {
+    const actor = await UsersRepository.findById(actorId);
+    const target = await UsersRepository.findById(targetId);
     if (!actor || !target) throw new AppError(404, 'USER_NOT_FOUND', 'User could not be found.');
 
     if (target.id === actor.id) {
@@ -71,9 +71,9 @@ export class UsersService {
     return { follow, status: 'accepted' };
   }
 
-  static unfollowUser(actorId: string, targetId: string) {
-    const actor = UsersRepository.findById(actorId);
-    const target = UsersRepository.findById(targetId);
+  static async unfollowUser(actorId: string, targetId: string) {
+    const actor = await UsersRepository.findById(actorId);
+    const target = await UsersRepository.findById(targetId);
     if (!actor || !target) throw new AppError(404, 'USER_NOT_FOUND', 'User could not be found.');
 
     UsersRepository.removeFollow(actor.id, target.id);
@@ -105,25 +105,27 @@ export class UsersService {
     return { canceled: true };
   }
 
-  static followers(username: string) {
-    const user = UsersRepository.findByUsername(username);
+  static async followers(username: string) {
+    const user = await UsersRepository.findByUsername(username);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User was not found.');
 
     const followRecords = UsersRepository.getFollowsByTarget(user.id);
-    return followRecords.map((r) => UsersRepository.findById(r.followerId)).filter(Boolean).map((u) => UsersRepository.serialize(u as UserRecord));
+    const users = await Promise.all(followRecords.map((r) => UsersRepository.findById(r.followerId)));
+    return Promise.all(users.filter((u): u is UserRecord => Boolean(u)).map((u) => UsersRepository.serialize(u)));
   }
 
-  static following(username: string) {
-    const user = UsersRepository.findByUsername(username);
+  static async following(username: string) {
+    const user = await UsersRepository.findByUsername(username);
     if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User was not found.');
 
     const followRecords = UsersRepository.getFollowsByFollower(user.id);
-    return followRecords.map((r) => UsersRepository.findById(r.followeeId)).filter(Boolean).map((u) => UsersRepository.serialize(u as UserRecord));
+    const users = await Promise.all(followRecords.map((r) => UsersRepository.findById(r.followeeId)));
+    return Promise.all(users.filter((u): u is UserRecord => Boolean(u)).map((u) => UsersRepository.serialize(u)));
   }
 
-  static blockUser(actorId: string, targetId: string) {
-    const actor = UsersRepository.findById(actorId);
-    const target = UsersRepository.findById(targetId);
+  static async blockUser(actorId: string, targetId: string) {
+    const actor = await UsersRepository.findById(actorId);
+    const target = await UsersRepository.findById(targetId);
     if (!actor || !target) throw new AppError(404, 'USER_NOT_FOUND', 'User could not be found.');
     if (actor.id === target.id) throw new AppError(409, 'SELF_BLOCK', 'You cannot block yourself.');
 
@@ -131,27 +133,27 @@ export class UsersService {
     return { blocked: true };
   }
 
-  static unblockUser(actorId: string, targetId: string) {
-    const actor = UsersRepository.findById(actorId);
-    const target = UsersRepository.findById(targetId);
+  static async unblockUser(actorId: string, targetId: string) {
+    const actor = await UsersRepository.findById(actorId);
+    const target = await UsersRepository.findById(targetId);
     if (!actor || !target) throw new AppError(404, 'USER_NOT_FOUND', 'User could not be found.');
 
     UsersRepository.removeBlock(actor.id, target.id);
     return { unblocked: true };
   }
 
-  static muteUser(actorId: string, targetId: string) {
-    const actor = UsersRepository.findById(actorId);
-    const target = UsersRepository.findById(targetId);
+  static async muteUser(actorId: string, targetId: string) {
+    const actor = await UsersRepository.findById(actorId);
+    const target = await UsersRepository.findById(targetId);
     if (!actor || !target) throw new AppError(404, 'USER_NOT_FOUND', 'User could not be found.');
 
     UsersRepository.createMute(actor.id, target.id);
     return { muted: true };
   }
 
-  static unmuteUser(actorId: string, targetId: string) {
-    const actor = UsersRepository.findById(actorId);
-    const target = UsersRepository.findById(targetId);
+  static async unmuteUser(actorId: string, targetId: string) {
+    const actor = await UsersRepository.findById(actorId);
+    const target = await UsersRepository.findById(targetId);
     if (!actor || !target) throw new AppError(404, 'USER_NOT_FOUND', 'User could not be found.');
 
     UsersRepository.removeMute(actor.id, target.id);
